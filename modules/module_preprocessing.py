@@ -92,23 +92,19 @@ class Preprocessor:
         """
         for uploaded_file in self.uploaded_files:
             if uploaded_file is not None:
-                # Get file extension and validate it
                 _, file_extension = os.path.splitext(uploaded_file.name)
                 if file_extension in self.allowed_extensions:
                     file_name_without_extension = os.path.splitext(uploaded_file.name)[
                         0]
 
-                    # Read file content
                     file_content = self._read_uploaded_file(
                         uploaded_file, file_extension)
 
-                    # Split text into chunks
                     text_splitter = RecursiveCharacterTextSplitter(
                         chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
                     )
                     docs = text_splitter.split_text(file_content)
 
-                    # Add metadata and header to each chunk
                     for i, chunk in enumerate(docs):
                         metadata = {
                             "File Name": file_name_without_extension,
