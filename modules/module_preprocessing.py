@@ -2,6 +2,7 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 import os
 import re
+import io
 import markdown
 from pdfminer.high_level import extract_text as extract_text_from_pdf
 from io import StringIO
@@ -17,21 +18,21 @@ class MLStripper(HTMLParser):
         self.convert_charrefs = True
         self.text = StringIO()
 
-    def handle_data(self, d):
+    def handle_data(self, d: str) -> None:
         self.text.write(d)
 
-    def get_data(self):
+    def get_data(self) -> str:
         return self.text.getvalue()
 
 
-def strip_tags(html):
+def strip_tags(html: str) -> str:
     """Удалить HTML-теги из строки."""
     s = MLStripper()
     s.feed(html)
     return s.get_data()
 
 
-def clean_markdown(text):
+def clean_markdown(text: str) -> str:
     """Очистить синтаксис Markdown из текста."""
     text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
     text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
@@ -46,7 +47,7 @@ def clean_markdown(text):
     return text
 
 
-def extract_text_from_md(md_path):
+def extract_text_from_md(md_path: str) -> str:
     """Извлечь и очистить текст из Markdown-файла."""
     with open(md_path, "r", encoding="utf-8") as file:
         md_content = file.read()
@@ -55,7 +56,7 @@ def extract_text_from_md(md_path):
         return clean_markdown(text)
 
 
-def extract_text_from_file(file_path):
+def extract_text_from_file(file_path: str) -> str:
     """Извлечь текст из файла на основе его расширения."""
     if file_path.endswith('.pdf'):
         return extract_text_from_pdf(file_path)
@@ -69,7 +70,7 @@ def extract_text_from_file(file_path):
 
 
 class Preprocessor:
-    def __init__(self, uploaded_files, chunk_size=1200, chunk_overlap=300):
+    def __init__(self, uploaded_files: list, chunk_size=1200, chunk_overlap=300):
         """
         Инициализирует препроцессор со списком загруженных файлов.
 
@@ -85,7 +86,7 @@ class Preprocessor:
         self.all_docs = []
         self.allowed_extensions = ['.md', '.pdf', '.txt']
 
-    def extract_text(self):
+    def extract_text(self) -> None:
         """
         Извлекает и обрабатывает текст из загруженных файлов.
         Разбивает текст на фрагменты и добавляет их в self.all_docs.
@@ -118,7 +119,7 @@ class Preprocessor:
                         chunk_with_header = header + file_name_without_extension + "\n" + chunk
                         self.all_docs.append(chunk_with_header)
 
-    def _read_uploaded_file(self, uploaded_file, file_extension):
+    def _read_uploaded_file(self, uploaded_file: io.BytesIO, file_extension: str) -> str:
         """
         Читает содержимое загруженного файла в зависимости от его расширения.
 
@@ -136,7 +137,7 @@ class Preprocessor:
         else:
             raise ValueError("Unsupported file format")
 
-    def save_to_vector_db(self, model_name="hkunlp/instructor-large", vector_db_directory="vector_db"):
+    def save_to_vector_db(self, model_name="hkunlp/instructor-large", vector_db_directory="vector_db") -> None:
         model_kwargs = {'device': 'cpu'}
         encode_kwargs = {'normalize_embeddings': True}
         hf_embedding = HuggingFaceInstructEmbeddings(
