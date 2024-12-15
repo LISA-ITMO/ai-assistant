@@ -6,29 +6,40 @@ from langchain.embeddings import HuggingFaceInstructEmbeddings
 
 
 llm = initialize_llm()
-model_kwargs = {'device': 'cpu'}
-encode_kwargs = {'normalize_embeddings': True}
-hf_embedding = HuggingFaceInstructEmbeddings(
-    model_name="hkunlp/instructor-large",
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs
-)
-db = FAISS.load_local("ai-assistant/vector_db",
-                      embeddings=hf_embedding,
-                      allow_dangerous_deserialization=True)
-
-if "current_screen" not in st.session_state:
-    st.session_state.current_screen = "upload"
 
 
-def switch_to_chat():
-    st.session_state.current_screen = "chat"
+def set_page(page_name):
+    st.session_state.current_page = page_name
 
 
-def upload_screen():
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "upload"
+
+
+PAGES = {}
+
+
+def register_page(name, func):
+    """Регистрирует новую страницу."""
+    PAGES[name] = func
+
+
+def render_current_page():
+    """Рендерит текущую страницу."""
+    page_func = PAGES.get(st.session_state.current_page)
+    if page_func:
+        page_func()
+    else:
+        st.error("Страница не найдена")
+
+
+def upload_page():
     st.title("Загрузка файлов")
     uploaded_files = st.file_uploader(
-        "Выберите файлы", accept_multiple_files=True, type=["txt", "pdf", "md", "docx"])
+        label="Выберите файлы",
+        accept_multiple_files=True,
+        type=["txt", "pdf", "md", "docx"]
+    )
 
     preprocessor = Preprocessor(uploaded_files=uploaded_files)
 
@@ -36,31 +47,38 @@ def upload_screen():
         if uploaded_files:
             preprocessor.extract_text()
             preprocessor.save_to_vector_db()
-            st.write(f"Успех.")
+            st.success("Файлы успешно обработаны и сохранены в базу данных.")
         else:
-            st.write(f"Что-то пошло не так.")
+            st.error("Не удалось обработать файлы. Пожалуйста, выберите файлы.")
 
-    st.button("Загрузить", on_click=files_to_faiss)
-    st.button("Перейти к чату", on_click=switch_to_chat)
+    st.button(
+        label="Загрузить",
+        on_click=files_to_faiss
+    )
+    st.button(
+        label="Перейти к чату",
+        on_click=lambda: set_page("chat")
+    )
 
 
-def chat_screen():
+def chat_page():
     st.title("Чат с LLM")
     user_question = st.text_input("Введите ваш вопрос:")
-    if user_question:
-        search_results = db.similarity_search(user_question, k=5)
-        context = "\n".join([doc.page_content for doc in search_results])
 
+    if user_question:
+        context = ""
         response = generate_response(llm, context, user_question)
 
         st.subheader("Ответ:")
         st.write(response)
 
-    if st.button("Вернуться к загрузке файлов"):
-        st.session_state.current_screen = "upload"
+    st.button(
+        label="Вернуться к загрузке файлов",
+        on_click=lambda: set_page("upload")
+    )
 
 
-if st.session_state.current_screen == "upload":
-    upload_screen()
-elif st.session_state.current_screen == "chat":
-    chat_screen()
+register_page("upload", upload_page)
+register_page("chat", chat_page)
+
+render_current_page()
