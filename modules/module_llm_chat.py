@@ -7,6 +7,15 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
 
 def initialize_llm(model_name="meta-llama/Llama-3.2-1B-Instruct"):
+    """
+    Инициализация LLM.
+    Parameters:
+    - model_name (str): Название модели из HuggingFace, по умолчанию "meta-llama/Llama-3.2-1B-Instruct".
+
+    Returns:
+    - HuggingFacePipeline: Инстанс LLM.
+    """
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
@@ -27,7 +36,18 @@ def initialize_llm(model_name="meta-llama/Llama-3.2-1B-Instruct"):
     return llm
 
 
-def generate_response(llm, context, question):
+def generate_response(llm: object, context: str, question: str) -> str:
+    """
+    Функция для генерации ответа на вопрос, используя контекст.
+    Parameters:
+    - llm: LLM-инстанс.
+    - context (str): Контекст из загруженных ранее статей.
+    - question (str): Вопрос пользователя.
+
+    Returns:
+    - str: Сгенерированный ответ.
+    """
+
     template = '''
         Контекст: {context}
         Исходя из контекста, ответьте на следующий вопрос:
