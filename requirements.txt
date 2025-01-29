@@ -1,0 +1,5 @@
+fitz==0.0.1.dev2
+langchain==0.3.16
+langchain_community==0.3.16
+openai==1.60.2
+streamlit==1.41.1
