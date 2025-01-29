@@ -8,7 +8,7 @@ A.R.T.H.U.R. - это инструмент для академических и�
 
 1. Клонируйте репозиторий:
    ```sh
-   git clone https://github.com/yourusername/ai-assistant.git
+   git clone https://github.com/LISA-ITMO/ai-assistant.git
    cd ai-assistant
     ```
 2. Создайте и активируйте виртуальное окружение:
