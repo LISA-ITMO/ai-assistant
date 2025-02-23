@@ -6,6 +6,27 @@ openai.api_key = OPENAI_API_KEY
 
 
 class Agent:
+    """
+    Agent class for generating responses based on a given role and prompt.
+
+    Attributes:
+        role (str): The role of the agent.
+        role_prompt (str): The prompt associated with the agent's role.
+        temperature (float): The temperature setting for response generation.
+
+    Methods:
+        generate_response(input_text: str, context: str = None, max_tokens: int = 300) -> str:
+            Generates a response based on the input text and optional context.
+
+            Args:
+                input_text (str): The input text from the user.
+                context (str, optional): Additional context for the response. Defaults to None.
+                max_tokens (int, optional): The maximum number of tokens for the response. Defaults to 300.
+
+            Returns:
+                str: The generated response text.
+    """
+
     def __init__(self, role: str, role_prompt: str, temperature: float):
         self.role = role
         self.role_prompt = role_prompt
