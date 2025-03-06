@@ -5,18 +5,16 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.routes import query, upload, healthcheck
-from backend.app.core.config import settings  # Предполагаемый модуль настроек
+from backend.app.routes import llm_settings, query, upload, healthcheck
+from backend.app.config import settings
 
-# Создание экземпляра приложения FastAPI с метаданными
+
 app = FastAPI(
     title="ARTHUR",
-    version="0.0.1",
-    description="API сервис для обработки запросов и управления данными"
+    version="0.0.1"
 )
 
-# Настройка CORS - более безопасная конфигурация с разрешенными источниками
-origins: List[str] = settings.ALLOWED_ORIGINS if hasattr(
+origins: List[str] = llm_settings.ALLOWED_ORIGINS if hasattr(
     settings, "ALLOWED_ORIGINS") else ["http://localhost:3000"]
 
 app.add_middleware(
@@ -27,14 +25,11 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-# Подключение роутеров
-# Сначала healthcheck для более быстрых проверок
 app.include_router(healthcheck.router, prefix="/api")
 app.include_router(query.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
-
+app.include_router(llm_settings.router, prefix="/api")
 if __name__ == "__main__":
-    # Получение настроек из переменных окружения или использование значений по умолчанию
     host = os.getenv("API_HOST", "0.0.0.0")
     port = int(os.getenv("API_PORT", "8000"))
 
