@@ -1,0 +1,218 @@
+/* ==========================================================================
+   Переменные и базовые настройки
+   ========================================================================== */
+:root {
+  /* Основные цвета */
+  --primary-color: #2196f3;
+  --primary-dark: #1976d2;
+  --error-color: #f44336;
+  --success-color: #4caf50;
+  
+  /* Цвета текста и фона */
+  --text-color: #333;
+  --text-secondary: #666;
+  --background-light: #ffffff;
+  --background-main: #f5f5f5;
+  
+  /* Эффекты */
+  --shadow: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-hover: 0 4px 8px rgba(0,0,0,0.2);
+  --transition: all 0.3s ease;
+  
+  /* Размеры */
+  --container-max-width: 1200px;
+  --border-radius: 6px;
+  --spacing-small: 1rem;
+  --spacing-medium: 1.5rem;
+  --spacing-large: 2rem;
+}
+
+/* ==========================================================================
+   Базовые стили
+   ========================================================================== */
+body {
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-main);
+  color: var(--text-color);
+}
+
+/* ==========================================================================
+   Компоновка приложения
+   ========================================================================== */
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Шапка */
+.App-header {
+  background: var(--background-light);
+  padding: var(--spacing-large);
+  box-shadow: var(--shadow);
+}
+
+.App-header h1 {
+  margin: 0 0 var(--spacing-small) 0;
+  font-size: 2.5rem;
+  color: var(--primary-dark);
+}
+
+.App-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-large);
+}
+
+/* Основной контент */
+.App-main {
+  flex: 1;
+  padding: var(--spacing-large);
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Подвал */
+.App-footer {
+  background: var(--background-light);
+  padding: var(--spacing-medium);
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+  margin-top: auto;
+}
+
+.App-footer p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Компоненты
+   ========================================================================== */
+
+/* Кнопка загрузки PDF */
+.upload-pdf-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
+}
+
+.upload-pdf-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Форма запроса */
+.query-form {
+  background: var(--background-light);
+  padding: var(--spacing-medium);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--spacing-large);
+}
+
+/* Отображение ответа */
+.response-display {
+  background: var(--background-light);
+  padding: var(--spacing-medium);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-top: var(--spacing-large);
+  animation: slideIn 0.3s ease;
+}
+
+/* Отображение ошибок */
+.App-error {
+  background-color: #ffebee;
+  color: var(--error-color);
+  padding: var(--spacing-small);
+  border-radius: var(--border-radius);
+  margin: var(--spacing-small) 0;
+  animation: slideIn 0.3s ease;
+}
+
+/* ==========================================================================
+   Элементы форм
+   ========================================================================== */
+input {
+  padding: 12px;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  margin-right: var(--spacing-small);
+  transition: border-color 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   Анимации
+   ========================================================================== */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+}
