@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 // Компоненты
 import QueryForm from './components/QueryForm';
 import ResponseDisplay from './components/ResponseDisplay';
+import Settings from './components/Settings';
 
 // Стили
 import './styles/main.css';
@@ -21,6 +22,7 @@ function App() {
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   /**
    * Обработчик загрузки файлов
@@ -89,21 +91,32 @@ function App() {
           Загрузите PDF файлы для анализа или введите свой запрос
         </p>
         
-        {/* Кнопка загрузки файлов */}
-        <button 
-          className="upload-pdf-button" 
-          onClick={() => document.getElementById('pdf-upload').click()}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <span className="loading-spinner"></span>
-              Загрузка...
-            </>
-          ) : (
-            'Загрузить PDF файлы'
-          )}
-        </button>
+        <div className="header-buttons">
+          {/* Кнопка загрузки файлов */}
+          <button 
+            className="upload-pdf-button" 
+            onClick={() => document.getElementById('pdf-upload').click()}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className="loading-spinner"></span>
+                Загрузка...
+              </>
+            ) : (
+              'Загрузить PDF файлы'
+            )}
+          </button>
+          <br></br>
+          <br></br>
+          {/* Кнопка настроек */}
+          <button 
+            className="settings-button" 
+            onClick={() => setIsSettingsOpen(true)}
+          >
+            Настройки
+          </button>
+        </div>
         
         {/* Скрытый input для выбора файлов */}
         <input 
@@ -144,6 +157,12 @@ function App() {
       <footer className="App-footer">
         <p>&copy; 2025 Roman Kharkovskoy</p>
       </footer>
+
+      {/* Компонент настроек */}
+      <Settings 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </div>
   );
 }
