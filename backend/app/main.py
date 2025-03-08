@@ -25,10 +25,11 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-app.include_router(healthcheck.router, prefix="/api")
+app.include_router(healthcheck.router)
 app.include_router(query.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(llm_settings.router, prefix="/api")
+
 if __name__ == "__main__":
     host = os.getenv("API_HOST", "0.0.0.0")
     port = int(os.getenv("API_PORT", "8000"))
