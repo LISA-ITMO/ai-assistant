@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import QueryForm from './components/QueryForm';
 import ResponseDisplay from './components/ResponseDisplay';
 import Settings from './components/Settings';
+import FileManager from './components/FileManager';
 
 // Стили
 import './styles/main.css';
@@ -11,7 +12,11 @@ import './styles/main.css';
 // Константы
 const API_BASE_URL = 'http://localhost:8000';
 const API_ENDPOINTS = {
-  UPLOAD: `${API_BASE_URL}/api/upload`
+  UPLOAD: `${API_BASE_URL}/api/files/upload`,
+  FILES: {
+    LIST: `${API_BASE_URL}/api/files`,
+    DELETE: (filename) => `${API_BASE_URL}/api/files/${filename}`
+  }
 };
 
 /**
@@ -23,6 +28,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isFileManagerOpen, setIsFileManagerOpen] = useState(false);
 
   /**
    * Обработчик загрузки файлов
@@ -86,7 +92,7 @@ function App() {
     <div className="App">
       {/* Шапка приложения */}
       <header className="App-header">
-        <h1>Система обработки PDF документов</h1>
+        <h1>Интеллектуальная поддержка научных исследований</h1>
         <p className="App-subtitle">
           Загрузите PDF файлы для анализа или введите свой запрос
         </p>
@@ -109,6 +115,13 @@ function App() {
           </button>
           <br></br>
           <br></br>
+          {/* Кнопка управления файлами */}
+          <button 
+            className="file-manager-button" 
+            onClick={() => setIsFileManagerOpen(true)}
+          >
+            Управление файлами
+          </button>
           {/* Кнопка настроек */}
           <button 
             className="settings-button" 
@@ -157,6 +170,12 @@ function App() {
       <footer className="App-footer">
         <p>&copy; 2025 Roman Kharkovskoy</p>
       </footer>
+
+      {/* Компонент управления файлами */}
+      <FileManager 
+        isOpen={isFileManagerOpen} 
+        onClose={() => setIsFileManagerOpen(false)} 
+      />
 
       {/* Компонент настроек */}
       <Settings 
