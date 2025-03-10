@@ -93,8 +93,18 @@ body {
    Компоненты
    ========================================================================== */
 
-/* Кнопка загрузки PDF */
-.upload-pdf-button {
+/* Контейнер для кнопок в шапке */
+.header-buttons {
+  display: flex;
+  gap: var(--spacing-medium);
+  justify-content: center;
+  margin-top: var(--spacing-medium);
+}
+
+/* Стили для основных кнопок в шапке */
+.upload-pdf-button,
+.file-manager-button,
+.settings-button {
   background-color: var(--primary-color);
   color: white;
   border: none;
@@ -105,12 +115,44 @@ body {
   cursor: pointer;
   transition: var(--transition);
   box-shadow: var(--shadow);
+  min-width: 200px;
+}
+
+/* Разные цвета для разных кнопок */
+.file-manager-button {
+  background-color: var(--success-color);
+}
+
+.settings-button {
+  background-color: var(--text-secondary);
+}
+
+/* Эффекты при наведении */
+.upload-pdf-button:hover,
+.file-manager-button:hover,
+.settings-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .upload-pdf-button:hover {
   background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
+}
+
+.file-manager-button:hover {
+  background-color: #45a049;
+}
+
+.settings-button:hover {
+  background-color: #555;
+}
+
+/* Состояние загрузки */
+.upload-pdf-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Форма запроса */
