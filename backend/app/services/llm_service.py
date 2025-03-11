@@ -1,6 +1,6 @@
 from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
-from backend.app.config import OPENAI_API_KEY
+from backend.app.config import settings
 
 
 def call_openai(prompt: str, model_name: str = "gpt-3.5-turbo-instruct") -> str:
@@ -14,7 +14,7 @@ def call_openai(prompt: str, model_name: str = "gpt-3.5-turbo-instruct") -> str:
     Returns:
         str: The refined research topic with analysis and recommendations.
     """
-    llm = OpenAI(model_name=model_name, api_key=OPENAI_API_KEY)
+    llm = OpenAI(model_name=model_name, api_key=settings.OPENAI_API_KEY)
 
     template = """
                 Исходная тема исследования: "{research_topic}"
