@@ -1,34 +1,33 @@
 import os
-from typing import List
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.routes import llm_settings, query, upload, healthcheck
-from backend.app.config import settings
+from backend.app.routes import llm_settings, query, files, healthcheck, refine_topic
 
 
 app = FastAPI(
-    title="ARTHUR",
-    version="0.0.1"
+    title="Research Assistant API",
+    description="API для помощи в проведении исследований",
+    version="1.0.0"
 )
 
-origins: List[str] = llm_settings.ALLOWED_ORIGINS if hasattr(
-    settings, "ALLOWED_ORIGINS") else ["http://localhost:3000"]
-
+# Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(healthcheck.router)
 app.include_router(query.router, prefix="/api")
-app.include_router(upload.router, prefix="/api")
-app.include_router(llm_settings.router, prefix="/api")
+app.include_router(refine_topic.router, prefix="/api")
+app.include_router(files.router, prefix="/api/files", tags=["files"])
+app.include_router(llm_settings.router, prefix="/api", tags=["llm"])
+
 
 if __name__ == "__main__":
     host = os.getenv("API_HOST", "0.0.0.0")
