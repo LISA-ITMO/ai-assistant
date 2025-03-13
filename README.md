@@ -1,2 +1,23 @@
-# A.R.T.H.U.R.
-> A.R.T.H.U.R. - Academic Research Tool for Helpful Understanding and Retrieval.
+# A.R.T.H.U.R. 
+
+> Academic Research Tool for Helpful Understanding and Retrieval
+
+## Overview
+A.R.T.H.U.R. это open-source приложение, предназначенное для интеллектуальной поддержки научных исследований.
+
+## Возможности
+- **Уточнение темы исследования**: Использование искусственного интеллекта для уточнения и прояснения тем исследований
+- **Управление файлами**: Загрузка и управление исследовательскими материалами в формате PDF
+- **Управление ключами API**: Безопасное хранение и управление ключами API
+- **Поддержка нескольких LLM**: Совместимость с различными языковыми моделями (OpenAI, DeepSeek, YandexGPT, GigaChat)
+
+## Технологический стек
+### Backend
+- FastAPI
+- SQLAlchemy
+- SQLite
+- Langchain
+
+### Frontend
+- React.js
+- CSS3
