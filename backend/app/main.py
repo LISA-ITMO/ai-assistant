@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.routes import llm_settings, query, files, healthcheck, refine_topic
+from .database import engine
+from . import models
 
 
 app = FastAPI(
@@ -13,7 +15,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Настройка CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,6 +29,7 @@ app.include_router(refine_topic.router, prefix="/api")
 app.include_router(files.router, prefix="/api/files", tags=["files"])
 app.include_router(llm_settings.router, prefix="/api", tags=["llm"])
 
+models.Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
     host = os.getenv("API_HOST", "0.0.0.0")
