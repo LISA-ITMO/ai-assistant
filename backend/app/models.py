@@ -32,6 +32,7 @@ class UploadedFile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String)
+    file_path = Column(String)
     research_topic_id = Column(Integer, ForeignKey("research_topics.id"))
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
