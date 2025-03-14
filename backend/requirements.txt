@@ -1,5 +1,11 @@
 fastapi==0.115.11
-langchain_core==0.3.41
-langchain_openai==0.3.7
+fitz==0.0.1.dev2
+langchain==0.3.20
+langchain_core==0.3.45
+langchain_openai==0.3.8
+pandas==2.2.3
 pydantic==2.10.6
+pydantic_settings==2.8.1
+SQLAlchemy==1.4.54
+tabula==1.0.5
 uvicorn==0.34.0
