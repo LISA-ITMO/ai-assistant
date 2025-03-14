@@ -12,6 +12,9 @@ def improve_research_topic(original_topic: str, model_name: str = "gpt-3.5-turbo
                 Задача:
                 Уточнить и переформулировать тему исследования в одно предложение, 
                 чтобы она была максимально понятна и удобна для дальнейшего изучения.
+
+                Вывод:
+                Одно предложение, которое будет использоваться для дальнейшего изучения.
                 """
 
     prompt_template = PromptTemplate.from_template(template)
