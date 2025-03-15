@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
 
-// Компоненты
-import QueryForm from './components/QueryForm';
 import ResponseDisplay from './components/ResponseDisplay';
 import Settings from './components/Settings';
+import TopicModal from './components/TopicModal';
+import FileManager from './components/FileManager';
 
-// Стили
 import './styles/main.css';
+import './styles/modal.css';
 
-// Константы
 const API_BASE_URL = 'http://localhost:8000';
 const API_ENDPOINTS = {
-  UPLOAD: `${API_BASE_URL}/api/upload`
+  HEALTH: `${API_BASE_URL}/health`,
+  
+  FILES: {
+    UPLOAD: `${API_BASE_URL}/api/files/upload`,
+    LIST: `${API_BASE_URL}/api/files`,
+    DELETE: (filename) => `${API_BASE_URL}/api/files/${filename}`,
+  },
+  
+  LLM: {
+    QUERY: `${API_BASE_URL}/api/query`,
+    SETTINGS: `${API_BASE_URL}/api/llm/settings`,
+    REFINE_TOPIC: `${API_BASE_URL}/api/refine-topic`,
+  }
 };
 
 /**
@@ -23,33 +34,102 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  
+  // Состояния для управления представлениями
+  const [currentView, setCurrentView] = useState('search'); // search, files, results
+  
+  // Состояния для модального окна уточнения темы
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
+  const [suggestedTopic, setSuggestedTopic] = useState('');
+  const [finalTopic, setFinalTopic] = useState('');
+
+  /**
+   * Обработчик отправки формы поиска
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (query.trim() === '') return;
+
+    const savedSettings = localStorage.getItem('llmSettings');
+    const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+    if (!apiKey) {
+      setError('Пожалуйста, введите ваш OpenAI API ключ в настройках.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.LLM.REFINE_TOPIC, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({ research_topic: query })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('Неверный API ключ. Пожалуйста, введите корректный ключ в настройках.');
+        } else {
+          throw new Error(`Ошибка: ${response.status}`);
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setSuggestedTopic(data.refined_topic);
+      setIsTopicModalOpen(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Обработчик выбора оригинальной темы
+   */
+  const handleKeepOriginal = () => {
+    setFinalTopic(query);
+    setIsTopicModalOpen(false);
+    setCurrentView('files');
+  };
+
+  /**
+   * Обработчик выбора предложенной темы
+   */
+  const handleUseSuggested = () => {
+    setFinalTopic(suggestedTopic);
+    setIsTopicModalOpen(false);
+    setCurrentView('files');
+  };
 
   /**
    * Обработчик загрузки файлов
-   * @param {FileList} files - Список загружаемых файлов
+   * @param {FileList} files
    */
   const handleFileUpload = async (files) => {
-    // Если нет файлов, не выполняем запрос
     if (!files || files.length === 0) return;
     
     try {
-      // Устанавливаем состояние загрузки
       setIsLoading(true);
       setError(null);
 
-      // Формируем данные для отправки
       const formData = new FormData();
       Array.from(files).forEach((file) => {
         formData.append('files', file);
       });
-
-      // Отправляем запрос на сервер
-      const response = await fetch(API_ENDPOINTS.UPLOAD, {
+      
+      const response = await fetch(API_ENDPOINTS.FILES.UPLOAD, {
         method: 'POST',
         body: formData,
       });
 
-      // Проверяем успешность запроса
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
@@ -57,28 +137,85 @@ function App() {
         );
       }
 
-      // Обрабатываем успешный ответ
       const result = await response.json();
-      setResponse(`Успешно загружено ${result.files.length} файлов`);
       
     } catch (err) {
-      // Обрабатываем ошибки
       setError('Ошибка при загрузке файлов: ' + err.message);
       console.error('Ошибка загрузки:', err);
     } finally {
-      // Сбрасываем состояние загрузки
       setIsLoading(false);
     }
   };
 
   /**
-   * Обработчик изменения input для загрузки файлов
+   * Рендер содержимого в зависимости от текущего представления
    */
-  const handleFileInputChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFileUpload(e.target.files);
-      // Сбрасываем значение input, чтобы можно было загрузить те же файлы повторно
-      e.target.value = '';
+  const renderContent = () => {
+    switch (currentView) {
+      case 'search':
+        return (
+          <div className="search-container">
+            <h2>Введите тему вашего исследования</h2>
+            <form onSubmit={handleSubmit} className="centered-form">
+              <input
+                type="text"
+                className="centered-input"
+                placeholder="Например: Влияние социальных сетей на подростков"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <button 
+                type="submit" 
+                className="next-button"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="loading-spinner"></span>
+                    Обработка...
+                  </>
+                ) : 'Далее'}
+              </button>
+            </form>
+            {error && (
+              <div className="error-message">
+                <strong>Ошибка:</strong> {error}
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'files':
+        return (
+          <div className="files-container">
+            <h2>Загрузка материалов для исследования</h2>
+            <p className="topic-header">Тема: <strong>{finalTopic}</strong></p>
+            
+            <FileManager 
+              apiEndpoints={API_ENDPOINTS.FILES}
+              onUpload={handleFileUpload}
+              isLoading={isLoading}
+            />
+          </div>
+        );
+      
+      case 'results':
+        return (
+          <ResponseDisplay 
+            response={response} 
+            isLoading={isLoading}
+            query={finalTopic}
+            onReset={() => {
+              setCurrentView('search');
+              setQuery('');
+              setFinalTopic('');
+              setResponse('');
+            }}
+          />
+        );
+      
+      default:
+        return <div>Неизвестное представление</div>;
     }
   };
 
@@ -86,71 +223,25 @@ function App() {
     <div className="App">
       {/* Шапка приложения */}
       <header className="App-header">
-        <h1>Система обработки PDF документов</h1>
+        <h1 onClick={() => setCurrentView('search')} style={{ cursor: 'pointer' }}>
+          A.R.T.H.U.R.
+        </h1>
         <p className="App-subtitle">
-          Загрузите PDF файлы для анализа или введите свой запрос
+          Academic Research Tool for Helpful Understanding and Retrieval
         </p>
         
-        <div className="header-buttons">
-          {/* Кнопка загрузки файлов */}
-          <button 
-            className="upload-pdf-button" 
-            onClick={() => document.getElementById('pdf-upload').click()}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="loading-spinner"></span>
-                Загрузка...
-              </>
-            ) : (
-              'Загрузить PDF файлы'
-            )}
-          </button>
-          <br></br>
-          <br></br>
-          {/* Кнопка настроек */}
-          <button 
-            className="settings-button" 
-            onClick={() => setIsSettingsOpen(true)}
-          >
-            Настройки
-          </button>
-        </div>
-        
-        {/* Скрытый input для выбора файлов */}
-        <input 
-          type="file" 
-          id="pdf-upload" 
-          accept=".pdf" 
-          multiple
-          style={{ display: 'none' }} 
-          onChange={handleFileInputChange}
-        />
+        <button 
+          className="settings-button" 
+          onClick={() => setIsSettingsOpen(true)}
+        >
+          Настройки
+        </button>
       </header>
       
       {/* Основное содержимое */}
-      <main className="App-main">
-        {/* Форма запроса */}
-        <QueryForm 
-          setResponse={setResponse} 
-          isLoading={isLoading} 
-          setIsLoading={setIsLoading}
-          setError={setError}
-        />
-        
-        {/* Блок с ошибками */}
-        {error && (
-          <div className="App-error">
-            <strong>Ошибка:</strong> {error}
-          </div>
-        )}
-        
-        {/* Отображение результата */}
-        <ResponseDisplay 
-          response={response} 
-          isLoading={isLoading} 
-        />
+      <main className={`App-main ${currentView === 'search' ? 'centered-content' : ''}`}>
+        {/* Основной контент */}
+        {renderContent()}
       </main>
       
       {/* Подвал */}
@@ -158,10 +249,19 @@ function App() {
         <p>&copy; 2025 Roman Kharkovskoy</p>
       </footer>
 
-      {/* Компонент настроек */}
+      {/* Модальные окна */}
       <Settings 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
+      />
+      
+      <TopicModal
+        isOpen={isTopicModalOpen}
+        originalTopic={query}
+        suggestedTopic={suggestedTopic}
+        onKeepOriginal={handleKeepOriginal}
+        onUseSuggested={handleUseSuggested}
+        onClose={() => setIsTopicModalOpen(false)}
       />
     </div>
   );
