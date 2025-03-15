@@ -8,22 +8,7 @@ import FileManager from './components/FileManager';
 import './styles/main.css';
 import './styles/modal.css';
 
-const API_BASE_URL = 'http://localhost:8000';
-const API_ENDPOINTS = {
-  HEALTH: `${API_BASE_URL}/health`,
-  
-  FILES: {
-    UPLOAD: `${API_BASE_URL}/api/files/upload`,
-    LIST: `${API_BASE_URL}/api/files`,
-    DELETE: (filename) => `${API_BASE_URL}/api/files/${filename}`,
-  },
-  
-  LLM: {
-    QUERY: `${API_BASE_URL}/api/query`,
-    SETTINGS: `${API_BASE_URL}/api/llm/settings`,
-    REFINE_TOPIC: `${API_BASE_URL}/api/refine-topic`,
-  }
-};
+import { api } from './services/api';
 
 /**
  * Главный компонент приложения для обработки PDF документов
@@ -37,7 +22,7 @@ function App() {
   const [query, setQuery] = useState('');
   
   // Состояния для управления представлениями
-  const [currentView, setCurrentView] = useState('search'); // search, files, results
+  const [currentView, setCurrentView] = useState('search');
   
   // Состояния для модального окна уточнения темы
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
@@ -63,25 +48,7 @@ function App() {
     setError(null);
     
     try {
-      const response = await fetch(API_ENDPOINTS.LLM.REFINE_TOPIC, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({ research_topic: query })
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Неверный API ключ. Пожалуйста, введите корректный ключ в настройках.');
-        } else {
-          throw new Error(`Ошибка: ${response.status}`);
-        }
-        return;
-      }
-
-      const data = await response.json();
+      const data = await api.llm.refineTopic(query, apiKey);
       setSuggestedTopic(data.refined_topic);
       setIsTopicModalOpen(true);
     } catch (err) {
