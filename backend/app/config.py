@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Настройки приложения."""
 
     OPENAI_API_KEY: str = os.getenv('OPENAI_API_KEY')
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3001"]
 
     # Дополнительные настройки для сервера
     API_HOST: str = "0.0.0.0"
