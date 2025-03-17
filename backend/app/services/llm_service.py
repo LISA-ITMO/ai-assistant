@@ -1,6 +1,6 @@
 from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
-from backend.app.config import settings
+from backend.app.core.config import settings
 
 
 def improve_research_topic(original_topic: str, model_name: str = "gpt-3.5-turbo-instruct") -> str:
