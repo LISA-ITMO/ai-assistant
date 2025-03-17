@@ -9,7 +9,7 @@ import './styles/main.css';
 import './styles/modal.css';
 
 import { api } from './services/api';
-
+import { API_ENDPOINTS } from './services/api';
 /**
  * Главный компонент приложения для обработки PDF документов
  */
