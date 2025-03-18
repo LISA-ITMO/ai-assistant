@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/settings.css';
+import { api } from '../services/api';
 
 /**
  * Компонент настроек для выбора LLM модели и управления API ключами
  */
 const Settings = ({ isOpen, onClose }) => {
-  // Модели LLM доступные для выбора
   const availableModels = [
     { id: 'gpt-3.5', name: 'GPT-3.5' },
     { id: 'deepseek', name: 'DeepSeek' },
@@ -29,25 +29,26 @@ const Settings = ({ isOpen, onClose }) => {
   }, []);
 
   // Обработчик сохранения настроек
-  const handleSaveSettings = (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
     
-    // Сохраняем настройки в localStorage
-    const settings = {
-      model: selectedModel,
-      apiKey: apiKey
-    };
-    
-    localStorage.setItem('llmSettings', JSON.stringify(settings));
-    
-    // Закрываем модальное окно
-    onClose();
-    
-    // Уведомляем пользователя
-    alert('Настройки успешно сохранены!');
+    try {
+      await api.llm.saveLLMSettings('openai', apiKey);
+      
+      const settings = {
+        model: selectedModel,
+        apiKey: apiKey
+      };
+      
+      localStorage.setItem('llmSettings', JSON.stringify(settings));
+      onClose();
+      alert('Настройки успешно сохранены!');
+    } catch (error) {
+      console.error('Ошибка:', error);
+      alert('Не удалось сохранить API ключ');
+    }
   };
 
-  // Если модальное окно закрыто, ничего не рендерим
   if (!isOpen) return null;
 
   return (

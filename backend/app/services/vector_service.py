@@ -5,7 +5,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List, Optional
 import os
 
-from backend.app.config import settings
+from backend.app.core.config import settings
 from backend.app.models import UploadedFile
 
 

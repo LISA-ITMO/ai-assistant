@@ -4,7 +4,7 @@ from typing import Optional
 import os
 from sqlalchemy.orm import Session
 
-from backend.app.config import settings
+from backend.app.core.config import settings
 from backend.app.database import get_db
 from backend.app.models import APIKey
 
