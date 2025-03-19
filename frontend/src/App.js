@@ -4,6 +4,8 @@ import ResponseDisplay from './components/ResponseDisplay';
 import Settings from './components/Settings';
 import TopicModal from './components/TopicModal';
 import FileManager from './components/FileManager';
+import Navigation from './components/Navigation';
+import ResearchGoals from './components/ResearchGoals';
 
 import './styles/main.css';
 import './styles/modal.css';
@@ -28,7 +30,11 @@ function App() {
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   const [suggestedTopic, setSuggestedTopic] = useState('');
   const [finalTopic, setFinalTopic] = useState('');
+  const [hasSelectedTopic, setHasSelectedTopic] = useState(false);
 
+  // Add state for goals and tasks
+  const [researchGoals, setResearchGoals] = useState(null);
+  
   /**
    * Обработчик отправки формы поиска
    */
@@ -64,16 +70,26 @@ function App() {
   const handleKeepOriginal = () => {
     setFinalTopic(query);
     setIsTopicModalOpen(false);
+    setHasSelectedTopic(true);
     setCurrentView('files');
   };
 
   /**
    * Обработчик выбора предложенной темы
    */
-  const handleUseSuggested = () => {
-    setFinalTopic(suggestedTopic);
-    setIsTopicModalOpen(false);
-    setCurrentView('files');
+  const handleUseSuggested = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.research.generateGoals(suggestedTopic);
+      setResearchGoals(response);
+      setIsTopicModalOpen(false);
+      setHasSelectedTopic(true);
+      setCurrentView('goals');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
@@ -156,12 +172,15 @@ function App() {
         return (
           <div className="files-container">
             <h2>Загрузка материалов для исследования</h2>
-            <p className="topic-header">Тема: <strong>{finalTopic}</strong></p>
-            
             <FileManager 
-              apiEndpoints={API_ENDPOINTS.FILES}
+              apiEndpoints={{
+                LIST: '/api/files',
+                UPLOAD: '/api/files/upload',
+                DELETE: (filename) => `/api/files/${filename}`
+              }}
               onUpload={handleFileUpload}
               isLoading={isLoading}
+              topic={finalTopic}
             />
           </div>
         );
@@ -181,28 +200,58 @@ function App() {
           />
         );
       
+      case 'goals':
+        return (
+          <ResearchGoals
+            initialGoals={researchGoals?.goals}
+            initialTasks={researchGoals?.tasks}
+            onSave={handleSaveGoals}
+          />
+        );
+      
       default:
         return <div>Неизвестное представление</div>;
     }
+  };
+
+  const handleSaveGoals = async (goals) => {
+    // Add your goals saving logic here
   };
 
   return (
     <div className="App">
       {/* Шапка приложения */}
       <header className="App-header">
-        <h1 onClick={() => setCurrentView('search')} style={{ cursor: 'pointer' }}>
-          A.R.T.H.U.R.
-        </h1>
-        <p className="App-subtitle">
-          Academic Research Tool for Helpful Understanding and Retrieval
-        </p>
-        
-        <button 
-          className="settings-button" 
-          onClick={() => setIsSettingsOpen(true)}
-        >
-          Настройки
-        </button>
+        <div className="header-content">
+          <div className="header-title">
+            <h1 onClick={() => !hasSelectedTopic && setCurrentView('search')} style={{ cursor: 'pointer' }}>
+              A.R.T.H.U.R.
+            </h1>
+            <p className="App-subtitle">
+              Academic Research Tool for Helpful Understanding and Retrieval
+            </p>
+          </div>
+          
+          {hasSelectedTopic && (
+            <div className="current-topic">
+              <span className="topic-label">Тема исследования:</span>
+              <span className="topic-text">{finalTopic}</span>
+            </div>
+          )}
+
+          <div className="header-controls">
+            {/* Show navigation in header when topic is selected */}
+            {hasSelectedTopic && (
+              <Navigation currentView={currentView} setCurrentView={setCurrentView} />
+            )}
+            <button 
+              className="settings-button" 
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              Настройки
+            </button>
+          </div>
+        </div>
       </header>
       
       {/* Основное содержимое */}
