@@ -11,6 +11,9 @@ const API_ENDPOINTS = {
     QUERY: `${API_BASE_URL}/api/query`,
     SETTINGS: `${API_BASE_URL}/api/settings/llm`,
     REFINE_TOPIC: `${API_BASE_URL}/api/refine-topic`,
+  },
+  RESEARCH: {
+    GENERATE_GOALS: `${API_BASE_URL}/api/research/goals`,
   }
 };
 
@@ -84,6 +87,37 @@ export const api = {
       });
       if (!response.ok) throw new Error('Ошибка при удалении файла');
       return response.json();
+    }
+  },
+
+  research: {
+    generateGoals: async (topic) => {
+      const savedSettings = localStorage.getItem('llmSettings');
+      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+      const response = await fetch(API_ENDPOINTS.RESEARCH.GENERATE_GOALS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({ research_topic: topic })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Ошибка при генерации целей и задач');
+      }
+
+      const data = await response.json();
+      console.log("Received data:", data); // Для отладки
+
+      if (!data.goals || !data.tasks) {
+        console.error("Invalid response format:", data);
+        throw new Error('Неверный формат ответа от сервера');
+      }
+
+      return data; // Возвращаем данные напрямую
     }
   }
 };
