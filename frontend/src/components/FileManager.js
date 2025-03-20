@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import '../styles/fileManager.css';
+import { api } from '../services/api';
+import '../styles/file-manager.css';
 
-function FileManager({ apiEndpoints, onUpload, isLoading }) {
+function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
   const [files, setFiles] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [dragActive, setDragActive] = useState(false);
@@ -9,211 +10,151 @@ function FileManager({ apiEndpoints, onUpload, isLoading }) {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Загрузка списка файлов при монтировании компонента
   useEffect(() => {
     fetchFiles();
   }, []);
 
-  // Получение списка файлов с сервера
   const fetchFiles = async () => {
     try {
       setLoadingFiles(true);
       setError(null);
-      const response = await fetch(apiEndpoints.LIST);
-      
-      if (!response.ok) {
-        throw new Error(`Ошибка: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = await api.files.list();
       setFiles(data.files || []);
     } catch (error) {
       setError('Ошибка при получении списка файлов: ' + error.message);
-      console.error('Ошибка при получении списка файлов:', error);
     } finally {
       setLoadingFiles(false);
     }
   };
 
-  // Обработчик выбора файла
-  const handleFileSelect = (fileName) => {
-    setSelectedFiles(prev => 
-      prev.includes(fileName) 
-        ? prev.filter(name => name !== fileName)
-        : [...prev, fileName]
-    );
-  };
-
-  // Обработчик клика по области загрузки
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Обработчик изменения выбранных файлов
-  const handleFileChange = async (e) => {
-    if (e.target.files.length > 0) {
-      await handleUploadFiles(e.target.files);
-      e.target.value = null;
-    }
-  };
-
-  // Обработчик загрузки файлов
-  const handleUploadFiles = async (files) => {
+  const handleUploadFiles = async (fileList) => {
     try {
       setError(null);
-      const formData = new FormData();
-      Array.from(files).forEach(file => {
-        formData.append('files', file);
-      });
-
-      const response = await fetch(apiEndpoints.UPLOAD, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Ошибка при загрузке файлов');
-      }
-
-      await fetchFiles();
+      await api.files.upload(Array.from(fileList));
+      await fetchFiles(); // Обновляем список файлов после загрузки
     } catch (error) {
       setError('Ошибка при загрузке файлов: ' + error.message);
     }
   };
 
-  // Обработчики drag & drop
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
-  };
-
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files.length > 0) {
-      await handleUploadFiles(e.dataTransfer.files);
-    }
-  };
-
-  // Обработчик удаления файла
-  const handleDeleteFile = async (fileName) => {
+  const handleDeleteFile = async (filename) => {
     try {
       setError(null);
-      const response = await fetch(apiEndpoints.DELETE(fileName), {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Ошибка при удалении файла: ${response.status}`);
-      }
-      
-      await fetchFiles();
-      setSelectedFiles(prev => prev.filter(name => name !== fileName));
+      await api.files.delete(filename);
+      await fetchFiles(); // Обновляем список после удаления
     } catch (error) {
       setError('Ошибка при удалении файла: ' + error.message);
     }
   };
 
   return (
-    <div className="file-manager">
-      {error && (
-        <div className="error-message">
-          {error}
+    <div className="file-manager-container">
+      {topic && (
+        <div className="topic-header">
+          <h3>Тема исследования</h3>
+          <p>{topic}</p>
         </div>
       )}
-      
-      <div 
-        className={`drop-area ${dragActive ? 'active' : ''}`}
-        onDragEnter={handleDrag}
-        onDragOver={handleDrag}
-        onDragLeave={handleDrag}
-        onDrop={handleDrop}
-        onClick={handleUploadClick}
-      >
-        <div className="drop-content">
-          <div className="upload-icon">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 15V16C3 18.2091 4.79086 20 7 20H17C19.2091 20 21 18.2091 21 16V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+
+      <div className="upload-section">
+        <div 
+          className={`upload-area ${dragActive ? 'drag-active' : ''}`}
+          onDragEnter={() => setDragActive(true)}
+          onDragLeave={() => setDragActive(false)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragActive(false);
+            handleUploadFiles(e.dataTransfer.files);
+          }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="upload-content">
+            <i className="upload-icon">📁</i>
+            <p className="upload-text">Перетащите файлы сюда или кликните для выбора</p>
+            <p className="upload-hint">Поддерживаются файлы PDF, DOC, DOCX</p>
           </div>
-          <p className="drop-text">
-            Перетащите PDF файлы сюда или <span className="browse-text">выберите файлы</span>
-          </p>
-          <p className="drop-hint">Поддерживаются только PDF файлы</p>
+          <input
+            type="file"
+            multiple
+            onChange={(e) => handleUploadFiles(e.target.files)}
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept=".pdf,.doc,.docx"
+          />
         </div>
-        <input 
-          ref={fileInputRef}
-          type="file"
-          multiple 
-          accept=".pdf"
-          className="file-input"
-          onChange={handleFileChange}
-        />
       </div>
 
-      <div className="file-list-section">
+      {error && <div className="error-message">{error}</div>}
+
+      <div className="files-section">
         <h3>Загруженные файлы</h3>
-        
         {loadingFiles ? (
           <div className="loading-files">
             <span className="loading-spinner"></span>
             <p>Загрузка списка файлов...</p>
           </div>
-        ) : (
-          <>
-            {files.length === 0 ? (
-              <p className="no-files">Нет загруженных файлов</p>
-            ) : (
-              <div className="file-list">
-                {files.map(file => (
-                  <div key={file.filename} className="file-item">
-                    <div className="checkbox-cell">
-                      <input
-                        type="checkbox"
-                        checked={selectedFiles.includes(file.filename)}
-                        onChange={() => handleFileSelect(file.filename)}
-                      />
-                    </div>
-                    <div className="file-label">
-                      <span className="file-name">{file.filename}</span>
-                    </div>
-                    <div className="delete-cell">
-                      <button
-                        className="delete-button"
+        ) : files.length > 0 ? (
+          <div className="file-table-container">
+            <table className="file-table">
+              <thead>
+                <tr>
+                  <th className="file-name-column">Имя файла</th>
+                  <th className="file-size-column">Размер</th>
+                  <th className="file-date-column">Дата загрузки</th>
+                  <th className="actions-column">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {files.map((file) => (
+                  <tr key={file.filename} className="file-row">
+                    <td className="file-name-cell">
+                      <span className="file-icon">📄</span>
+                      {file.filename}
+                    </td>
+                    <td className="file-size-cell">{formatFileSize(file.size)}</td>
+                    <td className="file-date-cell">{formatDate(file.uploadDate)}</td>
+                    <td className="actions-cell">
+                      <button 
+                        className="action-button delete-button"
                         onClick={() => handleDeleteFile(file.filename)}
-                        disabled={isLoading}
+                        title="Удалить файл"
                       >
-                        Удалить
+                        🗑️
                       </button>
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            )}
-            
-            {files.length > 0 && (
-              <div className="file-actions">
-                <button
-                  className="generate-button"
-                  disabled={selectedFiles.length === 0 || isLoading}
-                  onClick={() => {
-                    console.log('Selected files:', selectedFiles);
-                  }}
-                >
-                  Сгенерировать обзор на основе выбранных файлов
-                </button>
-              </div>
-            )}
-          </>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="no-files">
+            <p>Нет загруженных файлов</p>
+          </div>
         )}
       </div>
     </div>
   );
 }
+
+// Вспомогательные функции
+const formatFileSize = (bytes) => {
+  if (!bytes) return 'N/A';
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+};
+
+const formatDate = (date) => {
+  if (!date) return 'N/A';
+  return new Date(date).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 export default FileManager;
