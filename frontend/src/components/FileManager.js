@@ -2,6 +2,32 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import '../styles/file-manager.css';
 
+const formatFileSize = (bytes) => {
+  if (!bytes) return 'N/A';
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
+    
+    return date.toLocaleString('ru-RU', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'N/A';
+  }
+};
+
 function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
   const [files, setFiles] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -31,7 +57,7 @@ function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
     try {
       setError(null);
       await api.files.upload(Array.from(fileList));
-      await fetchFiles(); // Обновляем список файлов после загрузки
+      await fetchFiles();
     } catch (error) {
       setError('Ошибка при загрузке файлов: ' + error.message);
     }
@@ -41,7 +67,7 @@ function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
     try {
       setError(null);
       await api.files.delete(filename);
-      await fetchFiles(); // Обновляем список после удаления
+      await fetchFiles();
     } catch (error) {
       setError('Ошибка при удалении файла: ' + error.message);
     }
@@ -113,7 +139,7 @@ function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
                       {file.filename}
                     </td>
                     <td className="file-size-cell">{formatFileSize(file.size)}</td>
-                    <td className="file-date-cell">{formatDate(file.uploadDate)}</td>
+                    <td className="file-date-cell">{formatDate(file.upload_date || file.uploadDate)}</td>
                     <td className="actions-cell">
                       <button 
                         className="action-button delete-button"
@@ -137,24 +163,5 @@ function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
     </div>
   );
 }
-
-// Вспомогательные функции
-const formatFileSize = (bytes) => {
-  if (!bytes) return 'N/A';
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-};
-
-const formatDate = (date) => {
-  if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 
 export default FileManager;
