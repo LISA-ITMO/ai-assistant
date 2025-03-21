@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import '../styles/research-goals.css';
 
 const ResearchGoals = ({ initialGoals = [], initialTasks = [], onSave }) => {
-  const [goals, setGoals] = useState(initialGoals);
-  const [tasks, setTasks] = useState(initialTasks);
+  const [goals, setGoals] = useState(initialGoals || []);
+  const [tasks, setTasks] = useState(initialTasks || []);
   const [editMode, setEditMode] = useState(false);
 
   const handleGoalChange = (index, value) => {
