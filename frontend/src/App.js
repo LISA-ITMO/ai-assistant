@@ -80,6 +80,7 @@ function App() {
   const handleUseSuggested = async () => {
     try {
       setIsLoading(true);
+      setFinalTopic(suggestedTopic);
       const response = await api.research.generateGoals(suggestedTopic);
       setResearchGoals(response);
       setIsTopicModalOpen(false);
@@ -220,11 +221,10 @@ function App() {
 
   return (
     <div className="App">
-      {/* Шапка приложения */}
       <header className="App-header">
         <div className="header-content">
           <div className="header-title">
-            <h1 onClick={() => !hasSelectedTopic && setCurrentView('search')} style={{ cursor: 'pointer' }}>
+            <h1 onClick={() => !hasSelectedTopic && setCurrentView('search')}>
               A.R.T.H.U.R.
             </h1>
             <p className="App-subtitle">
@@ -235,28 +235,28 @@ function App() {
           {hasSelectedTopic && (
             <div className="current-topic">
               <span className="topic-label">Тема исследования:</span>
-              <span className="topic-text">{finalTopic}</span>
+              <span className="topic-text">{finalTopic || 'Тема не выбрана'}</span>
             </div>
           )}
 
-          <div className="header-controls">
-            {/* Show navigation in header when topic is selected */}
-            {hasSelectedTopic && (
-              <Navigation currentView={currentView} setCurrentView={setCurrentView} />
-            )}
-            <button 
-              className="settings-button" 
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              Настройки
-            </button>
-          </div>
+          <button 
+            className="settings-button" 
+            onClick={() => setIsSettingsOpen(true)}
+          >
+            Настройки
+          </button>
         </div>
       </header>
-      
-      {/* Основное содержимое */}
+
+      {hasSelectedTopic && (
+        <nav className="main-navigation">
+          <div className="nav-container">
+            <Navigation currentView={currentView} setCurrentView={setCurrentView} />
+          </div>
+        </nav>
+      )}
+
       <main className={`App-main ${currentView === 'search' ? 'centered-content' : ''}`}>
-        {/* Основной контент */}
         {renderContent()}
       </main>
       
