@@ -4,6 +4,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List, Optional
 import os
+from fastapi import HTTPException
 
 from backend.app.core.config import settings
 from backend.app.models import UploadedFile
@@ -52,3 +53,23 @@ class VectorService:
 
         await self.add_documents_to_vector_store(all_documents, research_topic_id)
         return len(all_documents)
+
+    async def save_documents(self, files: List[dict]) -> dict:
+        try:
+            documents = []
+            for file in files:
+                file_documents = await self.process_pdf(file['path'])
+                documents.extend(file_documents)
+
+            await self.add_documents_to_vector_store(documents)
+
+            return {
+                "success": True,
+                "message": f"Successfully processed {len(documents)} documents",
+                "document_count": len(documents)
+            }
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing documents: {str(e)}"
+            )
