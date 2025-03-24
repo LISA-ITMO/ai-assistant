@@ -6,6 +6,7 @@ const API_ENDPOINTS = {
     UPLOAD: `${API_BASE_URL}/api/files/upload`,
     LIST: `${API_BASE_URL}/api/files`,
     DELETE: (filename) => `${API_BASE_URL}/api/files/${filename}`,
+    SAVE_DOCUMENTS: `${API_BASE_URL}/api/files/save-documents`,
   },
   LLM: {
     QUERY: `${API_BASE_URL}/api/query`,
@@ -87,7 +88,15 @@ export const api = {
       });
       if (!response.ok) throw new Error('Ошибка при удалении файла');
       return response.json();
-    }
+    },
+
+    saveDocuments: async () => {
+      const response = await fetch(API_ENDPOINTS.FILES.SAVE_DOCUMENTS, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Ошибка при сохранении документов');
+      return response.json();
+    },
   },
 
   research: {
