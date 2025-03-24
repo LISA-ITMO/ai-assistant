@@ -33,6 +33,7 @@ function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [savingDocuments, setSavingDocuments] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -70,6 +71,28 @@ function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
       await fetchFiles();
     } catch (error) {
       setError('Ошибка при удалении файла: ' + error.message);
+    }
+  };
+
+  const handleSaveDocuments = async () => {
+    if (files.length === 0) {
+      setError('Нет файлов для сохранения');
+      return;
+    }
+
+    try {
+      setSavingDocuments(true);
+      setError(null);
+      
+      const response = await api.files.saveDocuments();
+      
+      if (response.success) {
+        alert('Документы успешно сохранены и векторизованы');
+      }
+    } catch (error) {
+      setError('Ошибка при сохранении документов: ' + error.message);
+    } finally {
+      setSavingDocuments(false);
     }
   };
 
@@ -114,7 +137,25 @@ function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
       {error && <div className="error-message">{error}</div>}
 
       <div className="files-section">
-        <h3>Загруженные файлы</h3>
+        <div className="files-header">
+          <h3>Загруженные файлы</h3>
+          {files.length > 0 && (
+            <button
+              className="save-documents-button"
+              onClick={handleSaveDocuments}
+              disabled={savingDocuments}
+            >
+              {savingDocuments ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Сохранение...
+                </>
+              ) : (
+                'Сохранить документы'
+              )}
+            </button>
+          )}
+        </div>
         {loadingFiles ? (
           <div className="loading-files">
             <span className="loading-spinner"></span>
