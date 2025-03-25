@@ -65,13 +65,23 @@ function App() {
   };
 
   /**
-   * Обработчик выбора оригинальной темы
+   * Обработчик выбора исходной темы
    */
-  const handleKeepOriginal = () => {
-    setFinalTopic(query);
-    setIsTopicModalOpen(false);
-    setHasSelectedTopic(true);
-    setCurrentView('files');
+  const handleKeepOriginal = async () => {
+    try {
+      setIsLoading(true);
+      setFinalTopic(query);
+      const response = await api.research.generateGoals(query);
+      setResearchGoals(response);
+      setIsTopicModalOpen(false);
+      setHasSelectedTopic(true);
+      setCurrentView('goals');
+    } catch (error) {
+      setError(error.message);
+      setIsTopicModalOpen(false); // Закрываем модальное окно при ошибке
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
@@ -88,6 +98,7 @@ function App() {
       setCurrentView('goals');
     } catch (error) {
       setError(error.message);
+      setIsTopicModalOpen(false); // Закрываем модальное окно при ошибке
     } finally {
       setIsLoading(false);
     }
@@ -273,11 +284,12 @@ function App() {
       
       <TopicModal
         isOpen={isTopicModalOpen}
+        onClose={() => setIsTopicModalOpen(false)}
         originalTopic={query}
         suggestedTopic={suggestedTopic}
         onKeepOriginal={handleKeepOriginal}
         onUseSuggested={handleUseSuggested}
-        onClose={() => setIsTopicModalOpen(false)}
+        isLoading={isLoading}
       />
     </div>
   );
