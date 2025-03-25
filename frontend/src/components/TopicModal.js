@@ -1,54 +1,67 @@
 import React from 'react';
-import '../styles/modal.css';
+import '../styles/topic-modal.css';
 
 /**
  * Модальное окно для уточнения темы исследования
  */
-function TopicModal({ isOpen, originalTopic, suggestedTopic, onKeepOriginal, onUseSuggested, onClose }) {
+const TopicModal = ({ 
+  isOpen, 
+  onClose, 
+  originalTopic, 
+  suggestedTopic, 
+  onKeepOriginal, 
+  onUseSuggested,
+  isLoading 
+}) => {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content topic-modal">
+      <div className="modal-content">
         <div className="modal-header">
           <h2>Уточнение темы исследования</h2>
-          <button className="modal-close" onClick={onClose}>&times;</button>
+          <button className="close-button" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
-          <p className="modal-description">
-            Мы проанализировали вашу тему исследования и подготовили уточненную формулировку, 
-            которая может сделать ваше исследование более конкретным и глубоким.
-          </p>
+          <p>Мы предлагаем уточнить формулировку вашей темы исследования:</p>
           
-          <div className="topic-comparison">
-            <div className="topic-original">
-              <h3>Ваша тема</h3>
-              <p>{originalTopic}</p>
-            </div>
-            
-            <div className="topic-suggested">
-              <h3>Предлагаемая формулировка</h3>
-              <p>{suggestedTopic}</p>
-            </div>
+          <div className="topic-option">
+            <h3>Ваша формулировка:</h3>
+            <p className="topic-text">{originalTopic}</p>
+            <button 
+              className="topic-button"
+              onClick={onKeepOriginal}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Генерация целей и задач...
+                </>
+              ) : 'Оставить как есть'}
+            </button>
           </div>
-        </div>
-        <div className="modal-footer">
-          <button 
-            className="button secondary-button"
-            onClick={onKeepOriginal}
-          >
-            Оставить мою тему
-          </button>
-          <button 
-            className="button primary-button"
-            onClick={onUseSuggested}
-          >
-            Использовать предложенную
-          </button>
+          
+          <div className="topic-option">
+            <h3>Предлагаемая формулировка:</h3>
+            <p className="topic-text">{suggestedTopic}</p>
+            <button 
+              className="topic-button"
+              onClick={onUseSuggested}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Генерация целей и задач...
+                </>
+              ) : 'Использовать предложенную'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default TopicModal; 
