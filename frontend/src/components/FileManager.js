@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../services/api';
+import React, { useState, useRef, useEffect } from 'react';
 import '../styles/file-manager.css';
+import { api } from '../services/api';
+import { API_ENDPOINTS } from '../services/api';
 
-const formatFileSize = (bytes) => {
-  if (!bytes) return 'N/A';
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+const formatBytes = (bytes, decimals = 2) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
 };
 
@@ -28,181 +31,322 @@ const formatDate = (dateString) => {
   }
 };
 
-function FileManager({ apiEndpoints, onUpload, isLoading, topic }) {
+const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [files, setFiles] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [dragActive, setDragActive] = useState(false);
-  const [loadingFiles, setLoadingFiles] = useState(false);
-  const [savingDocuments, setSavingDocuments] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const [annotations, setAnnotations] = useState({});
+  const [generatingAnnotation, setGeneratingAnnotation] = useState({});
+
+  const fetchFiles = async () => {
+    if (!researchId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await api.research.getFiles(researchId);
+      setFiles(response.files || []);
+    } catch (err) {
+      console.error('Error fetching files:', err);
+      setError('Не удалось загрузить список файлов. Пожалуйста, попробуйте позже.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [researchId]);
 
-  const fetchFiles = async () => {
-    try {
-      setLoadingFiles(true);
-      setError(null);
-      const data = await api.files.list();
-      setFiles(data.files || []);
-    } catch (error) {
-      setError('Ошибка при получении списка файлов: ' + error.message);
-    } finally {
-      setLoadingFiles(false);
-    }
-  };
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  const handleUploadFiles = async (fileList) => {
-    try {
-      setError(null);
-      await api.files.upload(Array.from(fileList));
-      await fetchFiles();
-    } catch (error) {
-      setError('Ошибка при загрузке файлов: ' + error.message);
-    }
-  };
-
-  const handleDeleteFile = async (filename) => {
-    try {
-      setError(null);
-      await api.files.delete(filename);
-      await fetchFiles();
-    } catch (error) {
-      setError('Ошибка при удалении файла: ' + error.message);
-    }
-  };
-
-  const handleSaveDocuments = async () => {
-    if (files.length === 0) {
-      setError('Нет файлов для сохранения');
+    // Проверяем размер файла (10 МБ)
+    const maxSize = 10 * 1024 * 1024; // 10 MB
+    if (file.size > maxSize) {
+      alert('Размер файла превышает 10 МБ. Пожалуйста, выберите файл меньшего размера.');
       return;
     }
 
+    setIsUploading(true);
+    setUploadProgress(0);
+
     try {
-      setSavingDocuments(true);
-      setError(null);
-      
-      const response = await api.files.saveDocuments();
-      
-      if (response.success) {
-        alert('Документы успешно сохранены и векторизованы');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.research.uploadFile(formData, researchId, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      if (response && response.file_id) {
+        const newFile = {
+          id: response.file_id,
+          name: response.original_filename || file.name,
+          status: 'vectorized'
+        };
+
+        setFiles(prev => [...prev, newFile]);
+
+        if (typeof onDocumentsUploaded === 'function') {
+          onDocumentsUploaded([{
+            id: response.file_id,
+            name: response.original_filename || file.name
+          }]);
+        }
+      } else {
+        throw new Error('Некорректный ответ от сервера');
       }
     } catch (error) {
-      setError('Ошибка при сохранении документов: ' + error.message);
+      console.error('Ошибка при загрузке файла:', error);
+      alert(error.message || 'Не удалось загрузить файл. Попробуйте еще раз.');
     } finally {
-      setSavingDocuments(false);
+      setIsUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот файл?')) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await api.files.delete(fileId);
+      fetchFiles();
+    } catch (err) {
+      setError('Не удалось удалить файл. Пожалуйста, попробуйте позже.');
+      console.error('Error deleting file:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload({ target: { files: e.dataTransfer.files } });
+    }
+  };
+
+  const openFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const getFileIcon = (fileName) => {
+    if (!fileName) return '📁';
+    
+    try {
+      const extension = fileName.split('.').pop().toLowerCase();
+      
+      switch (extension) {
+        case 'pdf':
+          return '📄';
+        case 'doc':
+        case 'docx':
+          return '📝';
+        case 'xls':
+        case 'xlsx':
+          return '📊';
+        case 'ppt':
+        case 'pptx':
+          return '📑';
+        case 'jpg':
+        case 'jpeg':
+        case 'png':
+        case 'gif':
+          return '🖼️';
+        case 'txt':
+          return '📃';
+        default:
+          return '📁';
+      }
+    } catch (error) {
+      console.error('Error getting file icon:', error);
+      return '📁';
+    }
+  };
+
+  // Функция для извлечения имени файла из разных возможных источников
+  const getFileName = (file) => {
+    if (!file) return 'Неизвестный файл';
+    
+    // Проверяем различные свойства, которые могут содержать имя файла
+    return file.filename || file.name || file.fileName || 
+           (file.path ? file.path.split('/').pop() : null) || 
+           (file.url ? file.url.split('/').pop() : null) ||
+           'Файл без имени';
+  };
+
+  // Функция для извлечения ID файла из разных возможных источников
+  const getFileId = (file, index) => {
+    if (!file) return `file-${index}`;
+    
+    return file.id || file._id || file.fileId || file.filename || file.name || `file-${index}`;
+  };
+
+  const handleGenerateAnnotation = async (fileId, fileName) => {
+    if (generatingAnnotation[fileId]) return;
+    
+    setGeneratingAnnotation(prev => ({ ...prev, [fileId]: true }));
+    setError(null);
+    
+    try {
+      console.log('Generating annotation for:', { fileId, fileName, researchId });
+      const response = await api.research.generateAnnotation(fileId, researchId);
+      console.log('Annotation response:', response);
+      
+      if (response && response.annotation) {
+        setAnnotations(prev => ({
+          ...prev,
+          [fileId]: response.annotation
+        }));
+      } else {
+        console.error('Invalid response format:', response);
+        throw new Error('Некорректный ответ от сервера');
+      }
+    } catch (error) {
+      console.error('Detailed error:', error);
+      setError('Не удалось сгенерировать аннотацию. Попробуйте позже.');
+    } finally {
+      setGeneratingAnnotation(prev => ({ ...prev, [fileId]: false }));
     }
   };
 
   return (
     <div className="file-manager-container">
-      {topic && (
-        <div className="topic-header">
-          <h3>Тема исследования</h3>
-          <p>{topic}</p>
+      <div className="topic-header">
+        <h3>Тема исследования</h3>
+        <p className="topic-text">{topic || 'Не указана'}</p>
+      </div>
+      
+      {error && (
+        <div className="error-message">
+          <span className="error-icon">⚠️</span>
+          {error}
         </div>
       )}
-
+      
       <div className="upload-section">
         <div 
-          className={`upload-area ${dragActive ? 'drag-active' : ''}`}
-          onDragEnter={() => setDragActive(true)}
-          onDragLeave={() => setDragActive(false)}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragActive(false);
-            handleUploadFiles(e.dataTransfer.files);
-          }}
-          onClick={() => fileInputRef.current?.click()}
+          className={`upload-area ${isDragging ? 'drag-active' : ''}`}
+          onClick={openFileInput}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
-          <div className="upload-content">
-            <i className="upload-icon">📁</i>
-            <p className="upload-text">Перетащите файлы сюда или кликните для выбора</p>
-            <p className="upload-hint">Поддерживаются файлы PDF, DOC, DOCX</p>
-          </div>
-          <input
-            type="file"
-            multiple
-            onChange={(e) => handleUploadFiles(e.target.files)}
+          <div className="upload-icon">📤</div>
+          <div className="upload-text">Перетащите файлы сюда или нажмите для выбора</div>
+          <div className="upload-subtext">Поддерживаемые форматы: PDF, DOCX, TXT (до 10 МБ)</div>
+          <input 
+            type="file" 
+            className="file-input" 
             ref={fileInputRef}
-            style={{ display: 'none' }}
-            accept=".pdf,.doc,.docx"
+            onChange={handleFileUpload}
+            disabled={isUploading}
+            accept=".txt,.doc,.docx,.pdf"
           />
         </div>
       </div>
-
-      {error && <div className="error-message">{error}</div>}
-
+      
       <div className="files-section">
         <div className="files-header">
           <h3>Загруженные файлы</h3>
-          {files.length > 0 && (
-            <button
-              className="save-documents-button"
-              onClick={handleSaveDocuments}
-              disabled={savingDocuments}
-            >
-              {savingDocuments ? (
-                <>
-                  <span className="loading-spinner"></span>
-                  Сохранение...
-                </>
-              ) : (
-                'Сохранить документы'
-              )}
-            </button>
-          )}
+          <button 
+            onClick={fetchFiles} 
+            className="refresh-btn"
+            disabled={isLoading}
+            title="Обновить список файлов"
+          >
+            {isLoading ? '⌛' : '🔄'}
+          </button>
         </div>
-        {loadingFiles ? (
-          <div className="loading-files">
-            <span className="loading-spinner"></span>
-            <p>Загрузка списка файлов...</p>
+        
+        {isLoading ? (
+          <div className="loading-indicator">
+            <div className="loading-spinner"></div>
+            <span>Загрузка...</span>
           </div>
-        ) : files.length > 0 ? (
-          <div className="file-table-container">
-            <table className="file-table">
-              <thead>
-                <tr>
-                  <th className="file-name-column">Имя файла</th>
-                  <th className="file-size-column">Размер</th>
-                  <th className="file-date-column">Дата загрузки</th>
-                  <th className="actions-column">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {files.map((file) => (
-                  <tr key={file.filename} className="file-row">
-                    <td className="file-name-cell">
-                      <span className="file-icon">📄</span>
-                      {file.filename}
-                    </td>
-                    <td className="file-size-cell">{formatFileSize(file.size)}</td>
-                    <td className="file-date-cell">{formatDate(file.upload_date || file.uploadDate)}</td>
-                    <td className="actions-cell">
+        ) : (
+          <div className="files-list">
+            {files && files.length > 0 ? (
+              files.map((file, index) => {
+                const fileName = getFileName(file);
+                const fileId = getFileId(file, index);
+                
+                return (
+                  <div key={fileId} className="file-item">
+                    <div className="file-name">
+                      <span className="file-icon">{getFileIcon(fileName)}</span>
+                      {fileName}
+                    </div>
+                    <div className="file-actions">
+                      <button
+                        onClick={() => handleGenerateAnnotation(fileId, fileName)}
+                        className="generate-annotation-btn"
+                        disabled={generatingAnnotation[fileId]}
+                        title="Сгенерировать аннотацию"
+                      >
+                        {generatingAnnotation[fileId] ? '⌛' : '📝'}
+                      </button>
                       <button 
-                        className="action-button delete-button"
-                        onClick={() => handleDeleteFile(file.filename)}
+                        onClick={() => handleDeleteFile(fileId)}
                         title="Удалить файл"
+                        className="delete-file-btn"
                       >
                         🗑️
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="no-files">
-            <p>Нет загруженных файлов</p>
+                    </div>
+                    {annotations[fileId] && (
+                      <div className="file-annotation">
+                        <h4>Аннотация:</h4>
+                        <p>{annotations[fileId]}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="empty-state">
+                <div className="empty-state-icon">📚</div>
+                <div className="empty-state-text">Нет загруженных файлов</div>
+                <div className="empty-state-subtext">
+                  Загрузите файлы, чтобы использовать их в вашем исследовании
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
   );
-}
+};
+
+FileManager.defaultProps = {
+  onDocumentsUploaded: () => {}
+};
 
 export default FileManager;

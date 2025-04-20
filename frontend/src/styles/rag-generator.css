@@ -1,0 +1,192 @@
+.rag-generator {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rag-generator-header {
+  margin-bottom: 0.5rem;
+}
+
+.rag-generator-header h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.rag-generator-header p {
+  color: #666;
+  margin: 0;
+}
+
+.query-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.query-input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.query-input:focus {
+  outline: none;
+  border-color: #4a6cf7;
+  box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.1);
+}
+
+.query-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.generate-button {
+  background: linear-gradient(135deg, #4a6cf7 0%, #6e8efb 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.generate-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(110, 142, 251, 0.3);
+}
+
+.generate-button:active {
+  transform: translateY(0);
+}
+
+.generate-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.generated-content-container {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.content-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.content-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sources-toggle-button, .insert-button {
+  background-color: #f5f5f5;
+  color: #333;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.sources-toggle-button:hover, .insert-button:hover {
+  background-color: #eee;
+}
+
+.insert-button {
+  background-color: #e6f0ff;
+  color: #4a6cf7;
+}
+
+.insert-button:hover {
+  background-color: #d6e6ff;
+}
+
+.generated-content {
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 1.5rem;
+}
+
+.relevant-sources {
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+}
+
+.relevant-sources h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.source-item {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.source-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.source-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.source-relevance {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.source-text {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+} 

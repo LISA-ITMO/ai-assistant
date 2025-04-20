@@ -1,0 +1,141 @@
+.document-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.document-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.document-manager-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.add-document-button {
+  background: linear-gradient(135deg, #4a6cf7 0%, #6e8efb 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-document-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(110, 142, 251, 0.3);
+}
+
+.add-document-button:active {
+  transform: translateY(0);
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  color: #ddd;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.empty-state p {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.documents-count {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.documents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.document-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  gap: 1rem;
+  transition: all 0.2s ease;
+}
+
+.document-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.document-icon {
+  font-size: 2.5rem;
+  color: #666;
+}
+
+.document-details {
+  flex: 1;
+  overflow: hidden;
+}
+
+.document-title {
+  margin: 0 0 0.5rem;
+  color: #333;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.document-date, .document-chunks {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.document-metadata {
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.document-metadata p {
+  margin: 0.25rem 0;
+} 

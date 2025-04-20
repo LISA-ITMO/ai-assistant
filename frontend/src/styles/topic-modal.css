@@ -78,43 +78,61 @@
 }
 
 .topic-option {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
   background-color: var(--gray-50);
-}
-
-.topic-option h3 {
-  margin-top: 0;
-  font-size: 1.1rem;
-  color: var(--text-color);
-}
-
-.topic-text {
-  font-size: 1rem;
-  line-height: 1.5;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: white;
   border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   border: 1px solid var(--gray-200);
-}
-
-.topic-button {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
+.topic-option:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--gray-300);
+}
+
+.topic-option h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: var(--gray-700);
+  font-weight: 600;
+}
+
+.topic-option .topic-text {
+  background-color: white;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+  border: 1px solid var(--gray-200);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.topic-button {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .topic-button:hover {
-  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(110, 142, 251, 0.3);
+}
+
+.topic-button:disabled {
+  background: var(--gray-400);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .original-button {
@@ -127,4 +145,11 @@
 
 .suggested-button:hover {
   background-color: var(--primary-dark);
+}
+
+.modal-body > p {
+  margin-bottom: 1.5rem;
+  color: var(--gray-700);
+  text-align: center;
+  font-size: 1.1rem;
 } 

@@ -1,104 +1,280 @@
-.settings-modal {
+/* Модальное окно */
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
-.settings-content {
+.settings-modal {
   background-color: white;
-  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-in-out;
 }
 
+/* Заголовок модального окна */
 .settings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
 }
 
 .settings-header h2 {
   margin: 0;
+  color: var(--gray-800);
   font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .close-button {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 1.5rem;
+  color: var(--gray-500);
   cursor: pointer;
-  color: #666;
+  padding: 0.5rem;
+  transition: color 0.2s ease;
 }
 
 .close-button:hover {
-  color: #000;
+  color: var(--gray-700);
 }
 
-.form-group {
-  margin-bottom: 20px;
+/* Содержимое настроек */
+.settings-content {
+  padding: 1.5rem;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
+.settings-section {
+  margin-bottom: 2rem;
 }
 
-.form-group select,
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
+.settings-section h3 {
+  color: var(--gray-700);
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
 }
 
-.api-key-container {
+/* Выбор модели */
+.model-selection {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.model-option {
   display: flex;
   align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.api-key-container input {
-  flex: 1;
+.model-option:hover {
+  border-color: var(--primary-color);
+  background-color: var(--gray-50);
+}
+
+.model-option.selected {
+  border-color: var(--primary-color);
+  background-color: rgba(74, 108, 247, 0.05);
+}
+
+.model-radio {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray-300);
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease;
+}
+
+.model-option.selected .model-radio {
+  border-color: var(--primary-color);
+}
+
+.radio-inner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  transform: scale(0);
+  transition: transform 0.2s ease;
+}
+
+.radio-inner.active {
+  transform: scale(1);
+}
+
+.model-name {
+  color: var(--gray-700);
+  font-size: 0.95rem;
+}
+
+/* Поле ввода API ключа */
+.api-key-input {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.api-key-input input {
+  width: 100%;
+  padding: 0.75rem;
+  padding-right: 3rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.api-key-input input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.15);
 }
 
 .toggle-visibility {
-  margin-left: 10px;
-  padding: 10px;
-  background: #f1f1f1;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
   cursor: pointer;
-  white-space: nowrap;
+  padding: 0.25rem;
+  font-size: 1.1rem;
 }
 
-.form-actions {
-  text-align: right;
-  margin-top: 20px;
+.api-key-info {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+
+/* Сообщения об ошибках и успехе */
+.settings-error,
+.settings-success {
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: slideIn 0.3s ease-in-out;
+}
+
+.settings-error {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.settings-success {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+/* Кнопки действий */
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2rem;
 }
 
 .save-button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
+  background-color: var(--primary-color);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 16px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .save-button:hover {
-  background-color: #45a049;
+  background-color: var(--primary-dark);
+}
+
+.save-button:disabled {
+  background-color: var(--gray-300);
+  cursor: not-allowed;
+}
+
+/* Индикатор загрузки */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .settings-modal {
+    width: 90%;
+    margin: 1rem;
+  }
+
+  .model-selection {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-actions {
+    flex-direction: column;
+  }
+
+  .save-button {
+    width: 100%;
+    justify-content: center;
+  }
 } 
