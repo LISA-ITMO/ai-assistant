@@ -12,9 +12,16 @@ const API_ENDPOINTS = {
     QUERY: `${API_BASE_URL}/api/query`,
     SETTINGS: `${API_BASE_URL}/api/settings/llm`,
     REFINE_TOPIC: `${API_BASE_URL}/api/refine-topic`,
+    PROCESS_QUERY: '/llm/process-query',
+    SUGGEST_TOPIC: '/llm/suggest-topic',
   },
   RESEARCH: {
-    GENERATE_GOALS: `${API_BASE_URL}/api/research/goals`,
+    GENERATE_GOALS: `${API_BASE_URL}/api/research/generate-goals`,
+    GENERATE_RECOMMENDATIONS: `${API_BASE_URL}/api/research/generate-recommendations`,
+    CHAT: `${API_BASE_URL}/api/research/chat`,
+    FILES: `${API_BASE_URL}/api/research/files`,
+    UPLOAD_FILE: `${API_BASE_URL}/api/research/upload-file`,
+    GENERATE_REPORT: `${API_BASE_URL}/api/research/generate-report`,
   }
 };
 
@@ -60,6 +67,33 @@ export const api = {
       });
       if (!response.ok) throw new Error('Ошибка при отправке запроса');
       return response.json();
+    },
+
+    generateWithRAG: async (query, context, topic, apiKey) => {
+      try {
+        const response = await fetch('/api/report/generate-with-rag', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            query,
+            context,
+            topic
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Ошибка при генерации контента');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Ошибка API при генерации с RAG:', error);
+        throw error;
+      }
     }
   },
   
@@ -104,7 +138,66 @@ export const api = {
       const savedSettings = localStorage.getItem('llmSettings');
       const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
 
-      const response = await fetch(API_ENDPOINTS.RESEARCH.GENERATE_GOALS, {
+      if (!apiKey) {
+        throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+      }
+
+      try {
+        console.log(`Отправка запроса на ${API_ENDPOINTS.RESEARCH.GENERATE_GOALS}`);
+        
+        const response = await fetch(API_ENDPOINTS.RESEARCH.GENERATE_GOALS, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({ research_topic: topic })
+        });
+
+        console.log(`Получен ответ со статусом: ${response.status}`);
+
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка при генерации целей и задач');
+          } else {
+            const errorText = await response.text();
+            throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
+          }
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const responseText = await response.text();
+          console.error("Получен не JSON ответ:", responseText);
+          throw new Error('Сервер вернул неверный формат данных');
+        }
+
+        const data = await response.json();
+        console.log("Received data:", data);
+
+        if (!data.goals || !data.tasks) {
+          console.error("Invalid response format:", data);
+          throw new Error('Неверный формат ответа от сервера');
+        }
+
+        return data;
+      } catch (error) {
+        console.error("Ошибка при запросе к API:", error);
+        throw error;
+      }
+    },
+    
+    generateRecommendations: async (topic) => {
+      const savedSettings = localStorage.getItem('llmSettings');
+      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+      if (!apiKey) {
+        throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+      }
+
+      const response = await fetch(API_ENDPOINTS.RESEARCH.GENERATE_RECOMMENDATIONS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,19 +207,256 @@ export const api = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Ошибка при генерации целей и задач');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Ошибка при генерации рекомендаций');
+        } else {
+          const errorText = await response.text();
+          throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
+        }
       }
 
-      const data = await response.json();
-      console.log("Received data:", data); // Для отладки
-
-      if (!data.goals || !data.tasks) {
-        console.error("Invalid response format:", data);
-        throw new Error('Неверный формат ответа от сервера');
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error("Получен не JSON ответ:", responseText);
+        throw new Error('Сервер вернул неверный формат данных');
       }
 
-      return data; // Возвращаем данные напрямую
+      try {
+        const data = await response.json();
+        console.log("Received recommendations:", data);
+
+        if (!data.recommendations) {
+          console.error("Invalid response format:", data);
+          throw new Error('Неверный формат ответа от сервера');
+        }
+
+        return data.recommendations;
+      } catch (error) {
+        console.error("Ошибка при парсинге JSON:", error);
+        throw new Error('Ошибка при обработке ответа сервера');
+      }
+    },
+
+    generateReport: async (data) => {
+      const savedSettings = localStorage.getItem('llmSettings');
+      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+      
+      if (!apiKey) {
+        throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+      }
+
+      try {
+        console.log("API Key:", apiKey);
+        console.log("Request URL:", API_ENDPOINTS.RESEARCH.GENERATE_REPORT);
+        console.log("Request Headers:", {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        });
+        console.log("Request Body:", JSON.stringify(data, null, 2));
+
+        const response = await fetch(API_ENDPOINTS.RESEARCH.GENERATE_REPORT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        console.log("Response Status:", response.status);
+        console.log("Response Headers:", Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            console.error("Error Response:", errorData);
+            throw new Error(errorData.detail || 'Ошибка при генерации отчета');
+          } else {
+            const errorText = await response.text();
+            console.error("Error Text:", errorText);
+            throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
+          }
+        }
+
+        const responseData = await response.json();
+        console.log("Success Response:", responseData);
+        
+        if (!responseData) {
+          throw new Error('Пустой ответ от сервера');
+        }
+
+        return responseData;
+      } catch (error) {
+        console.error('Ошибка при генерации отчета:', error);
+        throw error;
+      }
+    },
+
+    chat: async (data, apiKey) => {
+      try {
+        const response = await fetch(API_ENDPOINTS.RESEARCH.CHAT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Ошибка при отправке сообщения');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Ошибка API при отправке сообщения:', error);
+        throw error;
+      }
+    },
+
+    uploadFile: async (formData, researchId, onProgress) => {
+      try {
+        const savedSettings = localStorage.getItem('llmSettings');
+        const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+        if (!apiKey) {
+          throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+        }
+
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.UPLOAD_FILE}?research_id=${researchId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка при загрузке файла');
+          } else {
+            const errorText = await response.text();
+            throw new Error(`Ошибка при загрузке файла: ${errorText}`);
+          }
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const responseText = await response.text();
+          console.error("Получен не JSON ответ:", responseText);
+          throw new Error('Сервер вернул неверный формат данных');
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        throw error;
+      }
+    },
+
+    getFiles: async (researchId) => {
+      try {
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.FILES}?research_id=${researchId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch files');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching files:', error);
+        throw error;
+      }
+    },
+
+    generateAnnotation: async (fileId, researchId) => {
+      try {
+        const savedSettings = localStorage.getItem('llmSettings');
+        const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+        if (!apiKey) {
+          throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+        }
+
+        const response = await fetch('/api/research/generate-annotation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            file_id: fileId,
+            research_id: researchId
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Ошибка при генерации аннотации');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Error generating annotation:', error);
+        throw error;
+      }
+    },
+  },
+
+  documents: {
+    getDocuments: async (researchId) => {
+      try {
+        const response = await fetch(`/api/documents/${researchId}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Ошибка при получении документов');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Ошибка API при получении документов:', error);
+        throw error;
+      }
+    },
+    
+    queryDocuments: async (query, researchId, topK = 5) => {
+      try {
+        const response = await fetch('/api/documents/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            query,
+            research_id: researchId,
+            top_k: topK
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Ошибка при выполнении запроса к документам');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Ошибка API при запросе к документам:', error);
+        throw error;
+      }
     }
   }
 };

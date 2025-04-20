@@ -1,0 +1,63 @@
+.animated-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.particle-1 {
+  width: 80px;
+  height: 80px;
+  left: 10%;
+  top: 10%;
+  animation: float 20s infinite ease-in-out;
+}
+
+.particle-2 {
+  width: 60px;
+  height: 60px;
+  right: 15%;
+  top: 20%;
+  animation: float 15s infinite ease-in-out reverse;
+}
+
+.particle-3 {
+  width: 40px;
+  height: 40px;
+  left: 20%;
+  bottom: 20%;
+  animation: float 18s infinite ease-in-out 2s;
+}
+
+.particle-4 {
+  width: 100px;
+  height: 100px;
+  right: 10%;
+  bottom: 10%;
+  animation: float 25s infinite ease-in-out 1s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px);
+  }
+  50% {
+    transform: translateY(0) translateX(20px);
+  }
+  75% {
+    transform: translateY(20px) translateX(10px);
+  }
+} 

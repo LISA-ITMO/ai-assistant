@@ -13,12 +13,13 @@ const Settings = ({ isOpen, onClose }) => {
     { id: 'gigachat', name: 'GigaChat' },
   ];
 
-  // Состояния для хранения выбранной модели и API ключа
   const [selectedModel, setSelectedModel] = useState('gpt-3.5');
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Загрузка настроек при инициализации
   useEffect(() => {
     const savedSettings = localStorage.getItem('llmSettings');
     if (savedSettings) {
@@ -28,9 +29,12 @@ const Settings = ({ isOpen, onClose }) => {
     }
   }, []);
 
-  // Обработчик сохранения настроек
   const handleSaveSettings = async (e) => {
     e.preventDefault();
+    
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
     
     try {
       await api.llm.saveLLMSettings('openai', apiKey);
@@ -41,64 +45,102 @@ const Settings = ({ isOpen, onClose }) => {
       };
       
       localStorage.setItem('llmSettings', JSON.stringify(settings));
-      onClose();
-      alert('Настройки успешно сохранены!');
+      setSaveSuccess(true);
+      
+      setTimeout(() => {
+        onClose();
+      }, 2000);
     } catch (error) {
       console.error('Ошибка:', error);
-      alert('Не удалось сохранить API ключ');
+      setSaveError('Не удалось сохранить API ключ. Пожалуйста, проверьте соединение и попробуйте снова.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="settings-modal">
-      <div className="settings-content">
+    <div className="modal-overlay">
+      <div className="settings-modal">
         <div className="settings-header">
           <h2>Настройки</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
+          <button className="close-button" onClick={onClose}>×</button>
         </div>
         
-        <form onSubmit={handleSaveSettings}>
-          <div className="form-group">
-            <label htmlFor="modelSelect">Выберите модель LLM:</label>
-            <select
-              id="modelSelect"
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              required
-            >
-              {availableModels.map(model => (
-                <option key={model.id} value={model.id}>{model.name}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="apiKeyInput">API ключ:</label>
-            <div className="api-key-container">
-              <input
-                id="apiKeyInput"
-                type={showApiKey ? 'text' : 'password'}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Введите ваш API ключ"
-                required
-              />
+        <div className="settings-content">
+          <form onSubmit={handleSaveSettings}>
+            <div className="settings-section">
+              <h3>Выбор модели</h3>
+              <div className="model-selection">
+                {availableModels.map((model) => (
+                  <div 
+                    key={model.id} 
+                    className={`model-option ${selectedModel === model.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedModel(model.id)}
+                  >
+                    <div className="model-radio">
+                      <div className={`radio-inner ${selectedModel === model.id ? 'active' : ''}`}></div>
+                    </div>
+                    <span className="model-name">{model.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="settings-section">
+              <h3>API ключ</h3>
+              <div className="api-key-input">
+                <input 
+                  type={showApiKey ? "text" : "password"} 
+                  value={apiKey} 
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Введите ваш API ключ"
+                />
+                <button 
+                  type="button" 
+                  className="toggle-visibility" 
+                  onClick={() => setShowApiKey(!showApiKey)}
+                >
+                  {showApiKey ? '🙈' : '👁️'}
+                </button>
+              </div>
+              <p className="api-key-info">
+                API ключ необходим для доступа к выбранной модели. 
+                Ключ хранится только в вашем браузере и не передается третьим лицам.
+              </p>
+            </div>
+            
+            {saveError && (
+              <div className="settings-error">
+                <span className="error-icon">⚠️</span>
+                {saveError}
+              </div>
+            )}
+            
+            {saveSuccess && (
+              <div className="settings-success">
+                <span className="success-icon">✅</span>
+                Настройки успешно сохранены!
+              </div>
+            )}
+            
+            <div className="settings-actions">
               <button 
-                type="button" 
-                className="toggle-visibility"
-                onClick={() => setShowApiKey(!showApiKey)}
+                type="submit" 
+                className="save-button"
+                disabled={isSaving}
               >
-                {showApiKey ? 'Скрыть' : 'Показать'}
+                {isSaving ? (
+                  <>
+                    <span className="loading-spinner"></span>
+                    Сохранение...
+                  </>
+                ) : 'Сохранить'}
               </button>
             </div>
-          </div>
-          
-          <div className="form-actions">
-            <button type="submit" className="save-button">Сохранить</button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

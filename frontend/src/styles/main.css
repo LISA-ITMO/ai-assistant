@@ -1,221 +1,286 @@
-/* ==========================================================================
-   Переменные и базовые настройки
-   ========================================================================== */
 :root {
-  /* Современная цветовая схема */
-  --primary-color: #3b82f6;
-  --primary-dark: #2563eb;
-  --secondary-color: #64748b;
-  --accent-color: #8b5cf6;
-  --success-color: #22c55e;
-  --error-color: #ef4444;
-  
-  /* Нейтральные цвета */
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-700: #334155;
-  --gray-900: #0f172a;
-  
-  /* Обновленные эффекты */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  
-  /* Скругления */
-  --radius-sm: 0.375rem;
-  --radius: 0.5rem;
-  --radius-lg: 0.75rem;
-  
-  /* Размеры */
+  --primary-color: #6e8efb;
+  --primary-dark: #5a7af0;
+  --primary-light: #a777e3;
+  --secondary-color: #a777e3;
+  --text-color: #333;
+  --text-light: #666;
+  --background-color: #f9fafc;
+  --white: #ffffff;
+  --gray-50: #f8f9fa;
+  --gray-100: #f1f3f5;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  --error-color: #e74c3c;
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+  --info-color: #3498db;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-sm: 4px;
+
   --container-max-width: 1200px;
-  --border-radius: 6px;
-  --spacing-small: 1rem;
-  --spacing-medium: 1.5rem;
+  --spacing-small: 0.5rem;
+  --spacing-medium: 1rem;
   --spacing-large: 2rem;
+  --transition: all 0.3s ease;
 }
 
-/* ==========================================================================
-   Базовые стили
-   ========================================================================== */
-body {
-  font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  background-color: var(--gray-100);
-  color: var(--gray-900);
-  line-height: 1.5;
 }
 
-/* ==========================================================================
-   Компоновка приложения
-   ========================================================================== */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  line-height: 1.6;
+}
+
 .App {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-/* Шапка */
 .App-header {
-  background-color: white;
-  border-bottom: 1px solid var(--gray-200);
-  padding: 1.5rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.header-content {
-  max-width: var(--container-max-width);
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 2rem;
+.App-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+  animation: shimmer 15s infinite linear;
+  pointer-events: none;
 }
 
-.header-title {
+@keyframes shimmer {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.logo {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.header-title h1 {
-  margin: 0;
-  font-size: 2rem;
-  color: var(--gray-900);
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.header-title h1:hover {
-  color: var(--primary-color);
-}
-
-.App-subtitle {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--gray-600);
-}
-
-.header-controls {
-  display: flex;
   align-items: center;
-  gap: 2rem;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease;
+}
+
+.logo:hover {
+  transform: translateY(-2px);
+}
+
+.logo:hover h1 {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.logo:active {
+  transform: translateY(0);
+}
+
+.logo h1 {
+  font-size: 2.5rem;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.logo p {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  opacity: 0.9;
+  max-width: 600px;
+  font-weight: 400;
+}
+
+.header-actions {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  z-index: 2;
 }
 
 .settings-button {
-  background-color: white;
-  color: var(--gray-700);
-  border: 1px solid var(--gray-200);
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .settings-button:hover {
-  background-color: var(--gray-50);
-  border-color: var(--gray-300);
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
-/* Основной контент */
+.settings-button:active {
+  transform: translateY(0);
+}
+
+.settings-icon {
+  font-size: 1.2rem;
+}
+
 .App-main {
   flex: 1;
-  padding: var(--spacing-large);
+  padding: 2rem;
   max-width: var(--container-max-width);
   margin: 0 auto;
   width: 100%;
-  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .centered-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 70vh;
 }
 
-/* Поисковый контейнер */
 .search-container {
   text-align: center;
   max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 0.5s ease;
+}
+
+.search-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
 }
 
 .search-container h2 {
-  color: var(--gray-900);
-  font-size: 1.75rem;
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.search-description {
+  color: var(--gray-600);
+  font-size: 1.1rem;
   margin-bottom: 2rem;
-  font-weight: 600;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
 }
 
 .centered-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   width: 100%;
-  align-items: center;
 }
 
 .centered-input {
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  transition: var(--transition);
   width: 100%;
-  max-width: 100%;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-lg);
-  font-size: 1.125rem;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease-in-out;
 }
 
 .centered-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
 }
 
 .next-button {
-  display: block;
-  margin: 0 auto;
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
   color: white;
   border: none;
-  padding: 0.875rem 2rem;
-  width: auto;
-  min-width: 150px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
   border-radius: var(--radius);
-  font-size: 1.125rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .next-button:hover {
-  background-color: var(--primary-dark);
   transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 12px rgba(110, 142, 251, 0.3);
+}
+
+.next-button:active {
+  transform: translateY(0);
 }
 
 .next-button:disabled {
-  background-color: var(--gray-200);
-  color: var(--gray-700);
+  background: var(--gray-400);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-.error-message {
-  text-align: center;
-  color: red;
-  margin-top: 10px;
-}
-
-/* Подвал */
 .App-footer {
   background: white;
   padding: var(--spacing-medium);
@@ -230,7 +295,6 @@ body {
   font-size: 0.875rem;
 }
 
-/* Отображение ответа */
 .response-display {
   background: white;
   padding: 2rem;
@@ -240,7 +304,6 @@ body {
   animation: fadeIn 0.4s ease;
 }
 
-/* Отображение ошибок */
 .App-error {
   background-color: #fee2e2;
   color: var(--error-color);
@@ -250,9 +313,6 @@ body {
   animation: fadeIn 0.3s ease;
 }
 
-/* ==========================================================================
-   Анимации
-   ========================================================================== */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -273,19 +333,33 @@ body {
   display: inline-block;
   width: 24px;
   height: 24px;
-  border: 3px solid rgba(0,0,0,0.1);
+  border: 3px solid rgba(255,255,255,0.2);
   border-radius: 50%;
-  border-top-color: var(--primary-color);
+  border-top-color: white;
   animation: spin 1s linear infinite;
   margin-right: 10px;
 }
 
-/* ==========================================================================
-   Адаптивная верстка
-   ========================================================================== */
 @media (max-width: 768px) {
-  .App-header h1 {
+  .App-header {
+    padding: 1.2rem 1rem;
+  }
+  
+  .logo h1 {
     font-size: 2rem;
+  }
+  
+  .logo p {
+    font-size: 0.85rem;
+  }
+  
+  .header-actions {
+    position: relative;
+    top: unset;
+    right: unset;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
   }
   
   .search-container h2 {
@@ -301,21 +375,19 @@ body {
     width: 100%;
   }
   
-  .settings-button {
-    position: relative;
-    top: unset;
-    right: unset;
-    margin-top: 1rem;
+  .App-main {
+    padding: 1rem;
   }
 }
 
 .current-topic {
-  background-color: var(--gray-50);
+  background-color: white;
   padding: 1rem 1.5rem;
   border-radius: var(--radius);
   border-left: 4px solid var(--primary-color);
   max-width: 800px;
   width: 100%;
+  box-shadow: var(--shadow-sm);
 }
 
 .topic-label {
@@ -338,6 +410,7 @@ body {
   background-color: white;
   border-bottom: 1px solid var(--gray-200);
   padding: 0.5rem 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .nav-container {
@@ -363,5 +436,179 @@ body {
 
   .settings-button {
     width: 100%;
+  }
+}
+
+.continue-research {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.5s ease;
+}
+
+.continue-research p {
+  margin-bottom: 1rem;
+  color: var(--gray-700);
+}
+
+.continue-button, .reset-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0 0.5rem;
+}
+
+.continue-button {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.continue-button:hover {
+  background-color: var(--primary-dark);
+}
+
+.reset-button {
+  background-color: transparent;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.reset-button:hover {
+  background-color: var(--gray-100);
+}
+
+/* Стили для страницы файлов */
+.files-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 90vh;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+.files-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.files-page-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.8rem;
+}
+
+.files-page-content {
+  flex: 1;
+  overflow: auto;
+  min-height: 600px;
+}
+
+/* Улучшенные стили для FileManager */
+.file-manager-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.topic-header {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.upload-section {
+  margin-bottom: 20px;
+}
+
+.upload-area {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-area:hover, .upload-area.drag-active {
+  border-color: #4a6fa5;
+  background-color: #f0f5ff;
+}
+
+.files-section {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  min-height: 300px;
+}
+
+.files-list {
+  margin-top: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.file-item:hover {
+  background-color: #f5f5f5;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #777;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+  .files-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .files-page-header button {
+    margin-top: 10px;
   }
 }

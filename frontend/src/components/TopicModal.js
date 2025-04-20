@@ -1,9 +1,7 @@
 import React from 'react';
 import '../styles/topic-modal.css';
 
-/**
- * Модальное окно для уточнения темы исследования
- */
+
 const TopicModal = ({ 
   isOpen, 
   onClose, 

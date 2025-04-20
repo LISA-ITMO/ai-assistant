@@ -3,24 +3,22 @@ from fastapi.responses import JSONResponse
 from typing import List
 import os
 import shutil
+from ..core.config import settings
+
 
 router = APIRouter()
 
-# Создаем директорию для хранения файлов, если она не существует
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = settings.UPLOAD_DIR
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.get("")
 async def list_files():
-    """
-    Получение списка всех загруженных файлов
-    """
     try:
         files = []
         for filename in os.listdir(UPLOAD_DIR):
             file_path = os.path.join(UPLOAD_DIR, filename)
-            if os.path.isfile(file_path) and filename.lower().endswith('.pdf'):
+            if os.path.isfile(file_path) and filename.lower().endswith(('.pdf', '.docx', '.doc', '.txt', '.csv', '.xlsx', '.xls')):
                 files.append({
                     "filename": filename,
                     "size": os.path.getsize(file_path)
@@ -35,25 +33,14 @@ async def list_files():
 
 @router.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
-    """
-    Загрузка нескольких файлов
-    """
     uploaded_files = []
 
     try:
         for file in files:
-            # Проверяем расширение файла
-            if not file.filename.lower().endswith('.pdf'):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Файл {file.filename} не является PDF файлом"
-                )
 
-            # Безопасное имя файла
             safe_filename = os.path.basename(file.filename)
             file_path = os.path.join(UPLOAD_DIR, safe_filename)
 
-            # Сохраняем файл
             try:
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
@@ -87,9 +74,6 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
 @router.delete("/{filename}")
 async def delete_file(filename: str):
-    """
-    Удаление файла по имени
-    """
     try:
         file_path = os.path.join(UPLOAD_DIR, filename)
 
