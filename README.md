@@ -14,10 +14,10 @@ A.R.T.H.U.R. это open-source приложение, предназначенн
 ## Технологический стек
 ### Backend
 - FastAPI
-- SQLAlchemy
-- SQLite
 - Langchain
+- Chroma
 
 ### Frontend
 - React.js
+- HTML
 - CSS3
