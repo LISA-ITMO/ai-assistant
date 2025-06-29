@@ -3,26 +3,56 @@ const API_BASE_URL = 'http://localhost:8000';
 const API_ENDPOINTS = {
   HEALTH: `${API_BASE_URL}/health`,
   FILES: {
-    UPLOAD: `${API_BASE_URL}/api/files/upload`,
-    LIST: `${API_BASE_URL}/api/files`,
-    DELETE: (filename) => `${API_BASE_URL}/api/files/${filename}`,
+    UPLOAD: `${API_BASE_URL}/api/v1/files/upload`,
+    LIST: `${API_BASE_URL}/api/v1/files`,
+    DELETE: (filename) => `${API_BASE_URL}/api/v1/files/${filename}`,
     SAVE_DOCUMENTS: `${API_BASE_URL}/api/files/save-documents`,
   },
   LLM: {
     QUERY: `${API_BASE_URL}/api/query`,
     SETTINGS: `${API_BASE_URL}/api/settings/llm`,
-    REFINE_TOPIC: `${API_BASE_URL}/api/refine-topic`,
-    PROCESS_QUERY: '/llm/process-query',
-    SUGGEST_TOPIC: '/llm/suggest-topic',
-  },
+    REFINE_TOPIC: `${API_BASE_URL}/api/refine-topic`
+  }, 
   RESEARCH: {
-    GENERATE_GOALS: `${API_BASE_URL}/api/research/generate-goals`,
-    GENERATE_RECOMMENDATIONS: `${API_BASE_URL}/api/research/generate-recommendations`,
-    CHAT: `${API_BASE_URL}/api/research/chat`,
-    FILES: `${API_BASE_URL}/api/research/files`,
-    UPLOAD_FILE: `${API_BASE_URL}/api/research/upload-file`,
-    GENERATE_REPORT: `${API_BASE_URL}/api/research/generate-report`,
+    PLAN: `${API_BASE_URL}/api/v1/research/plan`,
+    TOPIC: `${API_BASE_URL}/api/v1/research/topic`,
+    CHAT: `${API_BASE_URL}/api/v1/research/chat`,
+    FILES: `${API_BASE_URL}/api/v1/research/files`,
+    UPLOAD_FILE: `${API_BASE_URL}/api/v1/research/upload-file`,
+    GENERATE_REPORT: `${API_BASE_URL}/api/v1/research/generate-report`,
+    GENERATE_ANNOTATION: `${API_BASE_URL}/api/v1/research/generate-annotation`,
+    DELETE_FILE: `${API_BASE_URL}/api/v1/research/delete-file`,
+    CLEAR_VECTOR_STORE: `${API_BASE_URL}/api/v1/research/clear-vector-store`,
+    VECTORIZE_FILE: `${API_BASE_URL}/api/v1/research/vectorize-file`,
+  },
+  RAG: {
+    CHUNK: `${API_BASE_URL}/api/v1/rag/chunk`,
+    RETRIEVE: `${API_BASE_URL}/api/v1/rag/retrieve`,
+    CLEAR: `${API_BASE_URL}/api/v1/rag/clear`,
+  },
+  ANNOTATIONS: {
+    GENERATE: `${API_BASE_URL}/api/v1/annotations/generate`,
   }
+};
+
+const getApiKey = () => {
+  const savedSettings = localStorage.getItem('llmSettings');
+  if (!savedSettings) {
+    throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+  }
+  const settings = JSON.parse(savedSettings);
+  if (!settings.apiKey) {
+    throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+  }
+  return settings.apiKey;
+};
+
+const getHeaders = () => {
+  const apiKey = getApiKey();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`
+  };
 };
 
 export const api = {
@@ -40,7 +70,7 @@ export const api = {
     },
 
     refineTopic: async (topic, apiKey) => {
-      const response = await fetch(API_ENDPOINTS.LLM.REFINE_TOPIC, {
+      const response = await fetch(API_ENDPOINTS.LLM. REFINE_TOPIC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,19 +130,26 @@ export const api = {
   files: {
     list: async () => {
       const response = await fetch(API_ENDPOINTS.FILES.LIST);
-      if (!response.ok) throw new Error('Ошибка при получении списка файлов');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при получении списка файлов');
+      }
       return response.json();
     },
 
-    upload: async (files) => {
+    upload: async (file) => {
       const formData = new FormData();
-      files.forEach(file => formData.append('files', file));
+      formData.append('file', file);
 
       const response = await fetch(API_ENDPOINTS.FILES.UPLOAD, {
         method: 'POST',
         body: formData
       });
-      if (!response.ok) throw new Error('Ошибка при загрузке файлов');
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при загрузке файла');
+      }
       return response.json();
     },
 
@@ -120,7 +157,11 @@ export const api = {
       const response = await fetch(API_ENDPOINTS.FILES.DELETE(filename), {
         method: 'DELETE'
       });
-      if (!response.ok) throw new Error('Ошибка при удалении файла');
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при удалении файла');
+      }
       return response.json();
     },
 
@@ -134,57 +175,46 @@ export const api = {
   },
 
   research: {
-    generateGoals: async (topic) => {
-      const savedSettings = localStorage.getItem('llmSettings');
-      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
-
-      if (!apiKey) {
-        throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
-      }
-
+    generatePlan: async (topic, provider = 'chatgpt') => {
       try {
-        console.log(`Отправка запроса на ${API_ENDPOINTS.RESEARCH.GENERATE_GOALS}`);
-        
-        const response = await fetch(API_ENDPOINTS.RESEARCH.GENERATE_GOALS, {
+        const savedSettings = localStorage.getItem('llmSettings');
+        const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+        if (!apiKey) {
+          throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+        }
+
+        const response = await fetch(API_ENDPOINTS.RESEARCH.PLAN, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
-          body: JSON.stringify({ research_topic: topic })
+          body: JSON.stringify({
+            topic,
+            provider
+          })
         });
 
-        console.log(`Получен ответ со статусом: ${response.status}`);
-
         if (!response.ok) {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Ошибка при генерации целей и задач');
-          } else {
-            const errorText = await response.text();
-            throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
-          }
-        }
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const responseText = await response.text();
-          console.error("Получен не JSON ответ:", responseText);
-          throw new Error('Сервер вернул неверный формат данных');
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Ошибка при генерации плана исследования');
         }
 
         const data = await response.json();
-        console.log("Received data:", data);
-
-        if (!data.goals || !data.tasks) {
-          console.error("Invalid response format:", data);
+        
+        if (!data || !data.goal) {
           throw new Error('Неверный формат ответа от сервера');
         }
 
-        return data;
+        const result = {
+          goals: [data.goal],
+          tasks: Array.isArray(data.tasks) ? [...data.tasks] : []
+        };
+
+        return result;
       } catch (error) {
-        console.error("Ошибка при запросе к API:", error);
+        console.error('Error in generatePlan:', error);
         throw error;
       }
     },
@@ -296,88 +326,93 @@ export const api = {
       }
     },
 
-    chat: async (data, apiKey) => {
+    chat: async ({ prompt, provider, use_rag, top_k }) => {
       try {
-        const response = await fetch(API_ENDPOINTS.RESEARCH.CHAT, {
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.CHAT}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify(data)
+          headers: getHeaders(),
+          body: JSON.stringify({
+            prompt,
+            provider,
+            use_rag,
+            top_k
+          })
         });
-        
+
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.detail || 'Ошибка при отправке сообщения');
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Ошибка API при отправке сообщения:', error);
-        throw error;
-      }
-    },
-
-    uploadFile: async (formData, researchId, onProgress) => {
-      try {
-        const savedSettings = localStorage.getItem('llmSettings');
-        const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
-
-        if (!apiKey) {
-          throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
-        }
-
-        const response = await fetch(`${API_ENDPOINTS.RESEARCH.UPLOAD_FILE}?research_id=${researchId}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: formData
-        });
-
-        if (!response.ok) {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Ошибка при загрузке файла');
-          } else {
-            const errorText = await response.text();
-            throw new Error(`Ошибка при загрузке файла: ${errorText}`);
-          }
-        }
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const responseText = await response.text();
-          console.error("Получен не JSON ответ:", responseText);
-          throw new Error('Сервер вернул неверный формат данных');
         }
 
         const data = await response.json();
         return data;
+      } catch (error) {
+        console.error('Error in chat:', error);
+        throw error;
+      }
+    },
+
+    uploadFile: async (formData) => {
+      try {
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.UPLOAD_FILE}`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${getApiKey()}`
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Ошибка при загрузке файла');
+        }
+
+        return await response.json();
       } catch (error) {
         console.error('Error uploading file:', error);
         throw error;
       }
     },
 
-    getFiles: async (researchId) => {
+    vectorizeFile: async (fileId, researchId) => {
       try {
-        const response = await fetch(`${API_ENDPOINTS.RESEARCH.FILES}?research_id=${researchId}`, {
-          method: 'GET',
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.VECTORIZE_FILE}/${fileId}/vectorize`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-          }
+            'Authorization': `Bearer ${getApiKey()}`
+          },
+          body: JSON.stringify({ research_id: researchId })
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch files');
+          const error = await response.json();
+          throw new Error(error.detail || 'Ошибка при векторизации файла');
         }
 
         return await response.json();
       } catch (error) {
-        console.error('Error fetching files:', error);
+        console.error('Error vectorizing file:', error);
+        throw error;
+      }
+    },
+
+    getFiles: async (researchId) => {
+      try {
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.FILES}/${researchId}/files`, {
+          headers: {
+            'Authorization': `Bearer ${getApiKey()}`
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Ошибка при получении списка файлов');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Error getting files:', error);
         throw error;
       }
     },
@@ -388,78 +423,161 @@ export const api = {
         const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
 
         if (!apiKey) {
-          throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+          throw new Error('API ключ не найден');
         }
 
-        const response = await fetch('/api/research/generate-annotation', {
+        const response = await fetch(API_ENDPOINTS.RESEARCH.GENERATE_ANNOTATION, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
-          body: JSON.stringify({
-            file_id: fileId,
-            research_id: researchId
-          })
+          body: JSON.stringify({ file_id: fileId, research_id: researchId })
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Ошибка при генерации аннотации');
+          const error = await response.json();
+          throw new Error(error.detail || 'Ошибка при генерации аннотации');
         }
 
         return await response.json();
       } catch (error) {
-        console.error('Error generating annotation:', error);
+        console.error('Error in generateAnnotation:', error);
         throw error;
       }
     },
-  },
 
-  documents: {
-    getDocuments: async (researchId) => {
+    deleteFile: async (fileId, researchId) => {
       try {
-        const response = await fetch(`/api/documents/${researchId}`);
-        
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.DELETE_FILE}/${fileId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${getApiKey()}`
+          },
+          body: JSON.stringify({ research_id: researchId })
+        });
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Ошибка при получении документов');
+          const error = await response.json();
+          throw new Error(error.detail || 'Ошибка при удалении файла');
         }
-        
+
         return await response.json();
       } catch (error) {
-        console.error('Ошибка API при получении документов:', error);
+        console.error('Error deleting file:', error);
         throw error;
       }
     },
-    
-    queryDocuments: async (query, researchId, topK = 5) => {
+
+    clearVectorStore: async (researchId) => {
       try {
-        const response = await fetch('/api/documents/query', {
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.CLEAR_VECTOR_STORE}/${researchId}/vector-store/clear`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            query,
-            research_id: researchId,
-            top_k: topK
-          })
+            'Authorization': `Bearer ${getApiKey()}`
+          }
         });
-        
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Ошибка при выполнении запроса к документам');
+          const error = await response.json();
+          throw new Error(error.detail || 'Ошибка при очистке векторной базы данных');
         }
-        
+
         return await response.json();
       } catch (error) {
-        console.error('Ошибка API при запросе к документам:', error);
+        console.error('Error clearing vector store:', error);
+        throw error;
+      }
+    },
+
+    refineTopic: async (topic, provider) => {
+      try {
+        const response = await fetch(`${API_ENDPOINTS.RESEARCH.TOPIC}`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ topic, provider })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || 'Ошибка при уточнении темы');
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error in refineTopic:', error);
         throw error;
       }
     }
+  },
+
+  rag: {
+    chunkFile: async (filename) => {
+      const response = await fetch(API_ENDPOINTS.RAG.CHUNK, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ filename })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при разбиении файла на чанки');
+      }
+      return response.json();
+    },
+
+    retrieveChunks: async (query, topK = 3, provider) => {
+      const response = await fetch(API_ENDPOINTS.RAG.RETRIEVE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query, top_k: topK, provider })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при получении релевантных чанков');
+      }
+      return response.json();
+    },
+
+    clearVectorDB: async () => {
+      const response = await fetch(API_ENDPOINTS.RAG.CLEAR, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при очистке векторной базы данных');
+      }
+      return response.json();
+    }
+  },
+
+  annotations: {
+    generate: async (filename, provider, maxLength = 500, chunkSize = 1000) => {
+      const response = await fetch(API_ENDPOINTS.ANNOTATIONS.GENERATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          filename, 
+          provider, 
+          max_length: maxLength, 
+          chunk_size: chunkSize 
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при генерации аннотации');
+      }
+      return response.json();
+    }
   }
 };
-
-export { API_ENDPOINTS };
-  

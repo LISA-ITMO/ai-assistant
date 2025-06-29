@@ -36,7 +36,7 @@ const Navigation = ({ currentView, setCurrentView }) => {
             }}
             className="start-research-button"
           >
-            Начать исследование
+            Исследование
           </a>
         </li>
       </ul>

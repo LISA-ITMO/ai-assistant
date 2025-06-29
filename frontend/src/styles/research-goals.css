@@ -1,12 +1,89 @@
 .research-goals-container {
-  background-color: white;
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  box-shadow: var(--shadow);
-  max-width: 900px;
-  margin: 0 auto;
-  position: relative;
-  overflow: hidden;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.goals-section,
+.tasks-section {
+  margin-bottom: 24px;
+}
+
+.goals-section h3,
+.tasks-section h3 {
+  color: #333;
+  font-size: 1.2em;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.goal-content {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.goal-text {
+  margin: 0;
+  color: #333;
+  font-size: 1.1em;
+  line-height: 1.5;
+}
+
+.no-goal {
+  color: #666;
+  font-style: italic;
+  margin: 0;
+}
+
+.tasks-list {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.tasks-ordered-list {
+  margin: 0;
+  padding: 0;
+  list-style-position: inside;
+}
+
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.task-item:last-child {
+  margin-bottom: 0;
+}
+
+.task-number {
+  color: #2196f3;
+  font-weight: 600;
+  margin-right: 12px;
+  min-width: 24px;
+}
+
+.task-text {
+  color: #333;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.no-tasks {
+  color: #666;
+  font-style: italic;
+  margin: 0;
+  text-align: center;
+  padding: 20px;
 }
 
 .research-goals-container::before {
@@ -33,10 +110,6 @@
 .goals-header p {
   color: var(--gray-600);
   font-size: 1.1rem;
-}
-
-.goals-section, .tasks-section {
-  margin-bottom: 2rem;
 }
 
 .section-title {
@@ -89,10 +162,13 @@
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   font-size: 1rem;
-  resize: vertical;
+  resize: none;
   min-height: 60px;
+  height: auto;
+  overflow-y: hidden;
   transition: all 0.2s ease;
   background-color: white;
+  line-height: 1.5;
 }
 
 .goal-item textarea:focus, .task-item textarea:focus {

@@ -6,6 +6,8 @@
     "axios": "^1.6.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.5.0",
     "react-markdown-renderer": "^1.4.0",
     "react-router-dom": "^6.3.0",
     "react-scripts": "^5.0.1"
@@ -25,5 +27,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.0",
+    "react-refresh": "^0.17.0"
   }
 }

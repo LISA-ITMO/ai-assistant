@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/settings.css';
 import { api } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 /**
  * Компонент настроек для выбора LLM модели и управления API ключами
@@ -37,22 +38,26 @@ const Settings = ({ isOpen, onClose }) => {
     setSaveSuccess(false);
     
     try {
-      await api.llm.saveLLMSettings('openai', apiKey);
-      
+      if (!apiKey.trim()) {
+        throw new Error('API ключ не может быть пустым');
+      }
+
       const settings = {
         model: selectedModel,
-        apiKey: apiKey
+        apiKey: apiKey.trim()
       };
       
       localStorage.setItem('llmSettings', JSON.stringify(settings));
       setSaveSuccess(true);
+      toast.success('Настройки успешно сохранены');
       
       setTimeout(() => {
         onClose();
       }, 2000);
     } catch (error) {
       console.error('Ошибка:', error);
-      setSaveError('Не удалось сохранить API ключ. Пожалуйста, проверьте соединение и попробуйте снова.');
+      setSaveError(error.message || 'Не удалось сохранить настройки. Пожалуйста, попробуйте снова.');
+      toast.error(error.message || 'Не удалось сохранить настройки');
     } finally {
       setIsSaving(false);
     }

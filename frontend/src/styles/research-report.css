@@ -1,0 +1,114 @@
+.research-report {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.report-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.generate-button {
+  padding: 8px 16px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.generate-button:hover {
+  background: #218838;
+}
+
+.generate-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.export-button {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.export-button:hover {
+  background: #0056b3;
+}
+
+.report-settings {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f9fa;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.settings-grid label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.format-settings {
+  display: flex;
+  gap: 15px;
+}
+
+.style-select,
+.format-select,
+.language-select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+}
+
+.report-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-textarea {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.report-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+} 
