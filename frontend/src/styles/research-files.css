@@ -1,0 +1,184 @@
+.research-files {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.files-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.file-upload {
+  position: relative;
+}
+
+.file-input {
+  display: none;
+}
+
+.upload-button {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.upload-button:hover {
+  background-color: #357abd;
+}
+
+.upload-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.clear-vector-store-btn {
+  padding: 8px 16px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clear-vector-store-btn:hover {
+  background-color: #c82333;
+}
+
+.files-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #212529;
+  min-width: 200px;
+}
+
+.file-size {
+  color: #6c757d;
+  font-size: 0.9em;
+  min-width: 80px;
+}
+
+.file-status {
+  font-size: 0.9em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 100px;
+  text-align: center;
+}
+
+.file-status.uploading {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+}
+
+.file-status.vectorizing {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.file-status.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.file-status.ready {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.delete-button {
+  padding: 4px 8px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+  background-color: #c82333;
+}
+
+.delete-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.upload-progress {
+  width: 100px;
+  height: 4px;
+  background-color: #e9ecef;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #4a90e2;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  right: -30px;
+  top: -2px;
+  font-size: 0.8em;
+  color: #6c757d;
+}
+
+.error-message {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+.no-files {
+  text-align: center;
+  color: #6c757d;
+  padding: 20px;
+} 

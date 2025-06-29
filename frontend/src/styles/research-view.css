@@ -2,37 +2,231 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
   background-color: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
-.research-header {
-  margin-bottom: 2rem;
+.research-tabs {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  width: 100%;
-  padding: 1rem;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background-color: white;
+  border-bottom: 1px solid var(--gray-200);
+  position: relative;
 }
 
-.research-header h1 {
-  margin-bottom: 1rem;
+.research-tabs::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+  opacity: 0.7;
+}
+
+.tab-button {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: 50px;
+  color: var(--gray-700);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.tab-button:hover {
+  background-color: var(--gray-100);
   color: var(--primary-color);
-  font-size: 2rem;
+}
+
+.tab-button.active {
+  background-color: rgba(110, 142, 251, 0.1);
+  color: var(--primary-color);
   font-weight: 600;
 }
 
-.research-header p {
-  color: var(--text-secondary);
-  max-width: 800px;
+.research-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .research-tabs {
+    padding: 0.8rem 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .tab-button {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.research-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.research-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.8rem;
+}
+
+.research-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.action-button {
+  padding: 0.5rem 1rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-button:hover {
+  background-color: #2980b9;
+}
+
+.action-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.research-content {
+  display: grid;
+  gap: 2rem;
+}
+
+.goals-section,
+.tasks-section,
+.chat-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.goals-section h3,
+.tasks-section h3,
+.chat-section h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.4rem;
+}
+
+.goals-content {
   line-height: 1.6;
+  color: #34495e;
+}
+
+.tasks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.task-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-number {
+  color: #7f8c8d;
+  font-weight: bold;
+  min-width: 2rem;
+}
+
+.task-text {
+  color: #34495e;
+  line-height: 1.5;
+}
+
+.empty-state {
+  color: #95a5a6;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+.chat-messages {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.message {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  max-width: 80%;
+}
+
+.message.user {
+  background: #3498db;
+  color: white;
+  margin-left: auto;
+}
+
+.message.assistant {
+  background: #ecf0f1;
+  color: #2c3e50;
+  margin-right: auto;
+}
+
+.chat-input {
+  display: flex;
+  gap: 1rem;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.chat-input button {
+  padding: 0.75rem 1.5rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chat-input button:hover {
+  background: #2980b9;
+}
+
+.chat-input button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
 }
 
 .research-progress {
@@ -53,39 +247,6 @@
   height: 100%;
   background-color: var(--primary-color);
   transition: width 0.3s ease;
-}
-
-.research-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--gray-200);
-  margin-bottom: 1.5rem;
-}
-
-.tab-button {
-  padding: 0.75rem 1.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--gray-600);
-  transition: all 0.2s;
-}
-
-.tab-button:hover {
-  color: var(--gray-800);
-  background-color: var(--gray-100);
-}
-
-.tab-button.active {
-  color: var(--primary-color);
-  border-bottom: 2px solid var(--primary-color);
-}
-
-.research-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
 }
 
 .research-overview {
@@ -2852,5 +3013,65 @@
   .export-button {
     flex: 1;
     justify-content: center;
+  }
+}
+
+/* Стили для навигации в заметках */
+.notes-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 15px;
+  width: 100%;
+  position: relative;
+}
+
+.notes-nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+  opacity: 0.7;
+}
+
+.notes-nav button {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: 50px;
+  color: var(--gray-700);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.notes-nav button:hover {
+  background-color: var(--gray-100);
+  color: var(--primary-color);
+}
+
+.notes-nav button.active {
+  background-color: rgba(110, 142, 251, 0.1);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Адаптивные стили для мобильных устройств */
+@media (max-width: 768px) {
+  .notes-nav {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .notes-nav button {
+    flex: 1;
+    min-width: calc(50% - 8px);
+    font-size: 13px;
+    padding: 8px 10px;
   }
 } 
