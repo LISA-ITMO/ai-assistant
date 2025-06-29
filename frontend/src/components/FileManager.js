@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/file-manager.css';
 import { api } from '../services/api';
-import { API_ENDPOINTS } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 const formatBytes = (bytes, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -31,26 +31,33 @@ const formatDate = (dateString) => {
   }
 };
 
-const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+const FileManager = ({ 
+    onUpload, 
+    isLoading: parentIsLoading,
+    topic,
+    researchId 
+}) => {
   const [files, setFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
-  const [annotations, setAnnotations] = useState({});
   const [generatingAnnotation, setGeneratingAnnotation] = useState({});
+  const [annotations, setAnnotations] = useState({});
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentFile, setCurrentFile] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [vectorizingFiles, setVectorizingFiles] = useState({});
+  const fileInputRef = useRef(null);
 
   const fetchFiles = async () => {
-    if (!researchId) return;
-    
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await api.research.getFiles(researchId);
-      setFiles(response.files || []);
+      const response = await api.files.list();
+      setFiles(response || []);
     } catch (err) {
       console.error('Error fetching files:', err);
       setError('Не удалось загрузить список файлов. Пожалуйста, попробуйте позже.');
@@ -61,74 +68,111 @@ const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
 
   useEffect(() => {
     fetchFiles();
-  }, [researchId]);
+    // Poll for file status updates every 30 seconds
+    const interval = setInterval(fetchFiles, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Проверяем размер файла (10 МБ)
-    const maxSize = 10 * 1024 * 1024; // 10 MB
-    if (file.size > maxSize) {
-      alert('Размер файла превышает 10 МБ. Пожалуйста, выберите файл меньшего размера.');
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
+  const handleFileUpload = async (file) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await api.research.uploadFile(formData, researchId, (progress) => {
-        setUploadProgress(progress);
-      });
-
-      if (response && response.file_id) {
-        const newFile = {
-          id: response.file_id,
-          name: response.original_filename || file.name,
-          status: 'vectorized'
-        };
-
-        setFiles(prev => [...prev, newFile]);
-
-        if (typeof onDocumentsUploaded === 'function') {
-          onDocumentsUploaded([{
-            id: response.file_id,
-            name: response.original_filename || file.name
-          }]);
+      setIsUploading(true);
+      setUploadError(null);
+      setCurrentFile(file.name);
+      
+      const result = await api.files.upload(file);
+      
+      if (result && result.filename) {
+        toast.success(`Файл ${file.name} успешно загружен`);
+        await fetchFiles();
+        
+        // Автоматически запускаем векторизацию после загрузки
+        await handleVectorizeFile(result.filename);
+        
+        if (onUpload) {
+          onUpload(result.filename);
         }
-      } else {
-        throw new Error('Некорректный ответ от сервера');
       }
-    } catch (error) {
-      console.error('Ошибка при загрузке файла:', error);
-      alert(error.message || 'Не удалось загрузить файл. Попробуйте еще раз.');
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      setUploadError(err.message);
+      toast.error(`Ошибка при загрузке файла: ${err.message}`);
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      setCurrentFile(null);
     }
   };
 
-  const handleDeleteFile = async (fileId) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этот файл?')) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
+  const handleVectorizeFile = async (filename) => {
     try {
-      await api.files.delete(fileId);
-      fetchFiles();
+      setVectorizingFiles(prev => ({ ...prev, [filename]: true }));
+      
+      const result = await api.rag.chunkFile(filename);
+      
+      if (result && result.chunk_count) {
+        toast.success(`Файл ${filename} успешно векторизован`);
+        await fetchFiles(); // Обновляем статус файла
+      } else {
+        throw new Error('Не удалось векторизовать файл');
+      }
     } catch (err) {
-      setError('Не удалось удалить файл. Пожалуйста, попробуйте позже.');
-      console.error('Error deleting file:', err);
+      console.error('Error vectorizing file:', err);
+      toast.error(`Ошибка при векторизации файла: ${err.message}`);
     } finally {
-      setIsLoading(false);
+      setVectorizingFiles(prev => ({ ...prev, [filename]: false }));
+    }
+  };
+
+  const handleFileDelete = async (filename) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить файл ${filename}?`)) {
+      return;
+    }
+
+    try {
+      await api.files.delete(filename);
+      toast.success(`Файл ${filename} успешно удален`);
+      await fetchFiles();
+    } catch (err) {
+      console.error('Error deleting file:', err);
+      toast.error(`Ошибка при удалении файла: ${err.message}`);
+    }
+  };
+
+  const handleGenerateAnnotation = async (filename) => {
+    try {
+      setGeneratingAnnotation(prev => ({ ...prev, [filename]: true }));
+      
+      const result = await api.annotations.generate(filename, 'chatgpt', 200, 8000);
+      
+      if (result && result.annotation) {
+        setAnnotations(prev => ({
+          ...prev,
+          [filename]: result.annotation
+        }));
+        toast.success(`Аннотация для ${filename} успешно сгенерирована`);
+      }
+    } catch (err) {
+      console.error('Error generating annotation:', err);
+      toast.error(`Ошибка при генерации аннотации: ${err.message}`);
+    } finally {
+      setGeneratingAnnotation(prev => ({ ...prev, [filename]: false }));
+    }
+  };
+
+  const handleClearVectorDB = async () => {
+    if (!window.confirm('Вы уверены, что хотите очистить векторную базу данных? Это действие нельзя отменить.')) {
+      return;
+    }
+
+    try {
+      setIsClearing(true);
+      await api.rag.clearVectorDB();
+      toast.success('Векторная база данных успешно очищена');
+      await fetchFiles(); // Обновляем статусы файлов
+    } catch (err) {
+      console.error('Error clearing vector DB:', err);
+      toast.error(`Ошибка при очистке векторной базы данных: ${err.message}`);
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -137,7 +181,8 @@ const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e) => {
+    e.preventDefault();
     setIsDragging(false);
   };
 
@@ -145,94 +190,48 @@ const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
     e.preventDefault();
     setIsDragging(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload({ target: { files: e.dataTransfer.files } });
-    }
-  };
-
-  const openFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    droppedFiles.forEach(file => handleFileUpload(file));
   };
 
   const getFileIcon = (fileName) => {
-    if (!fileName) return '📁';
-    
-    try {
-      const extension = fileName.split('.').pop().toLowerCase();
-      
-      switch (extension) {
-        case 'pdf':
-          return '📄';
-        case 'doc':
-        case 'docx':
-          return '📝';
-        case 'xls':
-        case 'xlsx':
-          return '📊';
-        case 'ppt':
-        case 'pptx':
-          return '📑';
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif':
-          return '🖼️';
-        case 'txt':
-          return '📃';
-        default:
-          return '📁';
-      }
-    } catch (error) {
-      console.error('Error getting file icon:', error);
-      return '📁';
+    const ext = fileName.split('.').pop().toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return '📄';
+      case 'doc':
+      case 'docx':
+        return '📝';
+      case 'txt':
+        return '📋';
+      default:
+        return '📁';
     }
   };
 
-  // Функция для извлечения имени файла из разных возможных источников
   const getFileName = (file) => {
-    if (!file) return 'Неизвестный файл';
-    
-    // Проверяем различные свойства, которые могут содержать имя файла
-    return file.filename || file.name || file.fileName || 
-           (file.path ? file.path.split('/').pop() : null) || 
-           (file.url ? file.url.split('/').pop() : null) ||
-           'Файл без имени';
+    // Проверяем все возможные варианты имени файла
+    return file.original_filename || file.filename || file.name || file.id || 'Unnamed file';
   };
 
-  // Функция для извлечения ID файла из разных возможных источников
   const getFileId = (file, index) => {
     if (!file) return `file-${index}`;
-    
-    return file.id || file._id || file.fileId || file.filename || file.name || `file-${index}`;
+    // Используем filename как основной идентификатор
+    return file.filename || file.id || file._id || file.fileId || file.name || `file-${index}`;
   };
 
-  const handleGenerateAnnotation = async (fileId, fileName) => {
-    if (generatingAnnotation[fileId]) return;
+  const getFileStatus = (status) => {
+    if (!status) return 'Загружен';
     
-    setGeneratingAnnotation(prev => ({ ...prev, [fileId]: true }));
-    setError(null);
-    
-    try {
-      console.log('Generating annotation for:', { fileId, fileName, researchId });
-      const response = await api.research.generateAnnotation(fileId, researchId);
-      console.log('Annotation response:', response);
-      
-      if (response && response.annotation) {
-        setAnnotations(prev => ({
-          ...prev,
-          [fileId]: response.annotation
-        }));
-      } else {
-        console.error('Invalid response format:', response);
-        throw new Error('Некорректный ответ от сервера');
-      }
-    } catch (error) {
-      console.error('Detailed error:', error);
-      setError('Не удалось сгенерировать аннотацию. Попробуйте позже.');
-    } finally {
-      setGeneratingAnnotation(prev => ({ ...prev, [fileId]: false }));
+    switch (status) {
+      case 'uploaded':
+        return 'Загружен';
+      case 'vectorized':
+        return 'Векторизован';
+      case 'error':
+        return 'Ошибка';
+      default:
+        return 'Загружен';
     }
   };
 
@@ -252,37 +251,61 @@ const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
       
       <div className="upload-section">
         <div 
-          className={`upload-area ${isDragging ? 'drag-active' : ''}`}
-          onClick={openFileInput}
+          className={`upload-area ${isDragging ? 'dragging' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <div className="upload-icon">📤</div>
-          <div className="upload-text">Перетащите файлы сюда или нажмите для выбора</div>
-          <div className="upload-subtext">Поддерживаемые форматы: PDF, DOCX, TXT (до 10 МБ)</div>
-          <input 
-            type="file" 
-            className="file-input" 
+          <input
+            type="file"
             ref={fileInputRef}
-            onChange={handleFileUpload}
-            disabled={isUploading}
-            accept=".txt,.doc,.docx,.pdf"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) handleFileUpload(file);
+            }}
+            style={{ display: 'none' }}
+            accept=".txt,.pdf,.docx"
           />
+          <button
+            className="upload-button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            {isUploading ? 'Загрузка...' : 'Выбрать файл'}
+          </button>
+          <p className="upload-hint">
+            или перетащите файл сюда
+          </p>
         </div>
       </div>
+      
+      {uploadError && (
+        <div className="error-message">
+          {uploadError}
+        </div>
+      )}
       
       <div className="files-section">
         <div className="files-header">
           <h3>Загруженные файлы</h3>
-          <button 
-            onClick={fetchFiles} 
-            className="refresh-btn"
-            disabled={isLoading}
-            title="Обновить список файлов"
-          >
-            {isLoading ? '⌛' : '🔄'}
-          </button>
+          <div className="files-actions">
+            <button 
+              onClick={handleClearVectorDB}
+              className="clear-vector-store-btn"
+              disabled={isClearing}
+              title="Очистить векторную базу данных"
+            >
+              {isClearing ? '⌛' : '🗑️'}
+            </button>
+            <button 
+              onClick={fetchFiles} 
+              className="refresh-btn"
+              disabled={isLoading}
+              title="Обновить список файлов"
+            >
+              {isLoading ? '⌛' : '🔄'}
+            </button>
+          </div>
         </div>
         
         {isLoading ? (
@@ -299,31 +322,56 @@ const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
                 
                 return (
                   <div key={fileId} className="file-item">
-                    <div className="file-name">
-                      <span className="file-icon">{getFileIcon(fileName)}</span>
-                      {fileName}
+                    <div className="file-info">
+                      <div className="file-name">
+                        <span className="file-icon">{getFileIcon(fileName)}</span>
+                        <span className="file-name-text">{fileName}</span>
+                      </div>
+                      <div className="file-meta">
+                        <span className="file-size">{formatBytes(file.size || 0)}</span>
+                        <span className="file-date">{formatDate(file.uploaded_at)}</span>
+                      </div>
+                    </div>
+                    <div className="file-status-container">
+                      <span className={`file-status ${file.status || 'uploaded'}`}>
+                        {vectorizingFiles[file.filename] ? 'Векторизация...' : getFileStatus(file.status)}
+                      </span>
                     </div>
                     <div className="file-actions">
+                      {file.status !== 'vectorized' && !vectorizingFiles[file.filename] && (
+                        <button
+                          onClick={() => handleVectorizeFile(file.filename)}
+                          className="vectorize-btn"
+                          title="Векторизовать файл"
+                        >
+                          Векторизовать
+                        </button>
+                      )}
+                      {vectorizingFiles[file.filename] && (
+                        <span className="vectorizing-status">Векторизация...</span>
+                      )}
                       <button
-                        onClick={() => handleGenerateAnnotation(fileId, fileName)}
+                        onClick={() => handleGenerateAnnotation(file.filename)}
                         className="generate-annotation-btn"
-                        disabled={generatingAnnotation[fileId]}
+                        disabled={generatingAnnotation[file.filename]}
                         title="Сгенерировать аннотацию"
                       >
-                        {generatingAnnotation[fileId] ? '⌛' : '📝'}
+                        {generatingAnnotation[file.filename]
+                          ? 'Генерация...'
+                          : 'Сгенерировать аннотацию'}
                       </button>
                       <button 
-                        onClick={() => handleDeleteFile(fileId)}
+                        onClick={() => handleFileDelete(file.filename)}
                         title="Удалить файл"
                         className="delete-file-btn"
                       >
                         🗑️
                       </button>
                     </div>
-                    {annotations[fileId] && (
+                    {annotations[file.filename] && (
                       <div className="file-annotation">
                         <h4>Аннотация:</h4>
-                        <p>{annotations[fileId]}</p>
+                        <p>{annotations[file.filename]}</p>
                       </div>
                     )}
                   </div>
@@ -346,7 +394,7 @@ const FileManager = ({ researchId, topic, onDocumentsUploaded }) => {
 };
 
 FileManager.defaultProps = {
-  onDocumentsUploaded: () => {}
+  onUpload: () => {}
 };
 
 export default FileManager;

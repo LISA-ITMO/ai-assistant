@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Toaster, toast } from 'react-hot-toast';
 
 import ResponseDisplay from './components/ResponseDisplay';
 import Settings from './components/Settings';
@@ -37,6 +39,7 @@ function App() {
 
   const [goals, setGoals] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [messages, setMessages] = useState([]);
 
   const handleDocumentsUploaded = useCallback((documents) => {
     setResearchDocuments(prev => [...prev, ...documents]);
@@ -127,86 +130,52 @@ function App() {
   };
 
   const generateResearchGoals = async (topic) => {
-    const savedSettings = localStorage.getItem('llmSettings');
-    const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
-    
-    if (!apiKey) {
-      console.warn('API ключ не найден, используем стандартные цели и задачи');
-      return defaultGoals(topic);
-    }
-    
     try {
-      const response = await api.research.generateGoals(topic);
-      
-      if (response && response.goals && response.tasks) {
-        return {
-          goals: response.goals,
-          tasks: response.tasks
-        };
+      const savedSettings = localStorage.getItem('llmSettings');
+      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+      if (!apiKey) {
+        // Если API ключ не найден, используем стандартные цели
+        setGoals(['Исследовать современные методы и подходы к решению поставленной задачи']);
+        setTasks([
+          'Проанализировать существующие решения и их эффективность',
+          'Выявить основные проблемы и ограничения',
+          'Предложить пути улучшения и оптимизации'
+        ]);
+        return;
+      }
+
+      const response = await api.research.generatePlan(topic);
+      console.log('Generated goals and tasks:', response);
+
+      if (response.goals && response.tasks) {
+        setGoals(response.goals);
+        setTasks(response.tasks);
       } else {
-        console.error('Некорректный формат ответа от API:', response);
-        return defaultGoals(topic);
+        console.error('Invalid response format:', response);
+        throw new Error('Неверный формат ответа от сервера');
       }
     } catch (error) {
-      console.error('Ошибка при генерации целей и задач:', error);
-      return defaultGoals(topic);
+      console.error('Error generating research goals:', error);
+      setError(error.message);
     }
   };
 
-  const defaultGoals = (topic) => ({
-    goals: [
-      `Изучить основные концепции по теме "${topic}"`,
-      'Проанализировать существующие подходы и методологии',
-      'Сформулировать собственную позицию на основе исследования'
-    ],
-    tasks: [
-      'Собрать и систематизировать информацию из различных источников',
-      'Выделить ключевые аспекты и проблемы темы',
-      'Сравнить различные точки зрения экспертов',
-      'Подготовить аргументированные выводы и рекомендации'
-    ]
-  });
-
-  const handleSubmit = async (inputQuery) => {
-    const queryText = typeof inputQuery === 'string' ? inputQuery : (inputQuery.preventDefault(), query);
-    
-    if (queryText.trim() === '') return;
-
-    const savedSettings = localStorage.getItem('llmSettings');
-    const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
-
-    if (!apiKey) {
-      setError('Пожалуйста, введите ваш OpenAI API ключ в настройках.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setQuery(queryText);
-    
+  const handleSubmit = async (originalTopic, refinedTopic) => {
     try {
-      const data = await api.llm.refineTopic(queryText, apiKey);
-
-      let improvedTopic;
-      if (typeof data === 'string') {
-        try {
-          const parsedData = JSON.parse(data);
-          improvedTopic = parsedData.improved_topic || parsedData.refined_topic;
-        } catch {
-          improvedTopic = data;
-        }
-      } else if (typeof data === 'object') {
-        improvedTopic = data.improved_topic || data.refined_topic;
-      } else {
-        improvedTopic = data;
-      }
+      setIsLoading(true);
+      setError(null);
       
-      improvedTopic = improvedTopic.replace(/^["']|["']$/g, '');
+      // Сохраняем обе версии темы
+      setQuery(originalTopic);
+      setSuggestedTopic(refinedTopic);
       
-      setSuggestedTopic(improvedTopic);
+      // Показываем модальное окно для выбора темы
       setIsTopicModalOpen(true);
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      setError(error.message);
+      toast.error(`Ошибка: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -215,48 +184,98 @@ function App() {
   const handleKeepOriginal = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       setFinalTopic(query);
-    
-      const newGoals = await generateResearchGoals(query);
-      setResearchGoals(newGoals);
+      
+      const savedSettings = localStorage.getItem('llmSettings');
+      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+      if (!apiKey) {
+        setError('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+        setCurrentView('error');
+        toast.error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+        return;
+      }
+      
+      // Генерируем план исследования
+      const response = await api.research.generatePlan(query);
+      
+      if (!response || !response.goals || !response.tasks) {
+        throw new Error('Неверный формат ответа от сервера');
+      }
+
+      // Обновляем состояние
+      setGoals([...response.goals]);
+      setTasks([...response.tasks]);
       
       const newResearchId = `research_${Date.now()}`;
       setResearchId(newResearchId);
-
-      saveResearchData(query, newGoals, newResearchId);
+      
+      // Сохраняем данные
+      const researchData = {
+        topic: query,
+        goals: [...response.goals],
+        tasks: [...response.tasks],
+        id: newResearchId
+      };
+      
+      localStorage.setItem('currentResearch', JSON.stringify(researchData));
       
       setIsTopicModalOpen(false);
       setHasSelectedTopic(true);
       setCurrentView('research');
+      
     } catch (error) {
       console.error('Ошибка при обработке темы:', error);
+      setError(error.message);
+      toast.error(`Ошибка: ${error.message}`);
+      setCurrentView('error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleUseSuggested = async () => {
+  const handleUseSuggested = async (suggestedTopic) => {
     try {
-      setIsLoading(true);
+      setCurrentView('loading');
+      
+      const savedSettings = localStorage.getItem('llmSettings');
+      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
+
+      if (!apiKey) {
+        setError('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+        setCurrentView('error');
+        toast.error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
+        return;
+      }
+
+      const response = await api.research.generatePlan(suggestedTopic);
+      
+      if (!response || !response.goals || !response.tasks) {
+        throw new Error('Неверный формат ответа от сервера');
+      }
+
+      // Создаем новый объект без циклических ссылок
+      const researchData = {
+        topic: suggestedTopic,
+        goals: [...response.goals],
+        tasks: [...response.tasks]
+      };
+
+      // Сохраняем данные в localStorage
+      localStorage.setItem('researchData', JSON.stringify(researchData));
+
+      // Обновляем состояние
       setFinalTopic(suggestedTopic);
-      
-      const newGoals = await generateResearchGoals(suggestedTopic);
-      setResearchGoals(newGoals);
-      setGoals(newGoals.goals);
-      setTasks(newGoals.tasks);
-      
-      const newResearchId = `research_${Date.now()}`;
-      setResearchId(newResearchId);
-      
-      saveResearchData(suggestedTopic, newGoals, newResearchId);
-      
-      setIsTopicModalOpen(false);
+      setGoals([...response.goals]);
+      setTasks([...response.tasks]);
       setHasSelectedTopic(true);
       setCurrentView('research');
     } catch (error) {
       console.error('Ошибка при обработке темы:', error);
-    } finally {
-      setIsLoading(false);
+      setError(error.message);
+      setCurrentView('error');
+      toast.error(`Ошибка: ${error.message}`);
     }
   };
 
@@ -308,8 +327,9 @@ function App() {
     }
   };
 
-  const handleSaveGoals = async (goals) => {
-    setResearchGoals(goals);
+  const handleSaveGoals = async (savedData) => {
+    setGoals(savedData.goals);
+    setTasks(savedData.tasks);
     setCurrentView('research');
   };
 
@@ -338,9 +358,6 @@ function App() {
           <div className="main-container files-page">
             <div className="files-page-header">
               <h2>Загрузка материалов для исследования</h2>
-              <button className="action-button" onClick={() => setCurrentView('research')}>
-                Вернуться к исследованию
-              </button>
             </div>
             <div className="files-page-content">
               <FileManager 
@@ -352,6 +369,7 @@ function App() {
                 onUpload={handleFileUpload}
                 isLoading={isLoading}
                 topic={finalTopic}
+                researchId={researchId}
               />
             </div>
           </div>
@@ -376,8 +394,8 @@ function App() {
         return (
           <ResearchGoals
             topic={finalTopic}
-            initialGoals={researchGoals?.goals}
-            initialTasks={researchGoals?.tasks}
+            initialGoals={goals}
+            initialTasks={tasks}
             onSave={handleSaveGoals}
           />
         );
@@ -386,16 +404,13 @@ function App() {
         return (
           <ResearchView
             topic={finalTopic}
-            goals={researchGoals?.goals || []}
-            tasks={researchGoals?.tasks || []}
-            initialGoals={setGoals}
-            initialTasks={setTasks}
-            savedNotes={researchNotes}
-            onNotesChange={setResearchNotes}
-            savedRecommendations={researchRecommendations}
-            onSaveRecommendations={handleSaveRecommendations}
+            goals={goals}
+            tasks={tasks}
+            onGoalsUpdate={setGoals}
+            onTasksUpdate={setTasks}
             researchId={researchId}
-            onDocumentsUploaded={handleDocumentsUploaded}
+            messages={messages}
+            onMessagesUpdate={setMessages}
           />
         );
       
@@ -405,48 +420,51 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <div className="logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-          <h1>A.R.T.H.U.R.</h1>
-          <p>Academic Research Tool for Helpful Understanding and Retrieval</p>
-        </div>
-        <div className="header-actions">
-        <button 
-            className="settings-button"
-            onClick={() => setIsSettingsOpen(true)}
-        >
-            <span className="settings-icon">⚙️</span>
-            <span>Настройки</span>
-        </button>
-        </div>
-      </header>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Toaster position="top-right" />
+      <div className="App">
+        <header className="App-header">
+          <div className="logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
+            <h1>A.R.T.H.U.R.</h1>
+            <p>Academic Research Tool for Helpful Understanding and Retrieval</p>
+          </div>
+          <div className="header-actions">
+          <button 
+              className="settings-button"
+              onClick={() => setIsSettingsOpen(true)}
+          >
+              <span className="settings-icon">⚙️</span>
+              <span>Настройки</span>
+          </button>
+          </div>
+        </header>
 
-      {hasSelectedTopic && (
-        <Navigation currentView={currentView} setCurrentView={setCurrentView} />
-      )}
+        {hasSelectedTopic && (
+          <Navigation currentView={currentView} setCurrentView={setCurrentView} />
+        )}
 
-      <main className={`App-main ${currentView === 'search' ? 'centered-content' : ''}`}>
-        {renderContent()}
-      </main>
+        <main className={`App-main ${currentView === 'search' ? 'centered-content' : ''}`}>
+          {renderContent()}
+        </main>
 
-      <TopicModal
-        isOpen={isTopicModalOpen}
-        onClose={() => setIsTopicModalOpen(false)}
-        originalTopic={query}
-        suggestedTopic={suggestedTopic}
-        onKeepOriginal={handleKeepOriginal}
-        onUseSuggested={handleUseSuggested}
-        isLoading={isLoading}
-      />
+        <TopicModal
+          isOpen={isTopicModalOpen}
+          onClose={() => setIsTopicModalOpen(false)}
+          originalTopic={query}
+          suggestedTopic={suggestedTopic}
+          onKeepOriginal={handleKeepOriginal}
+          onUseSuggested={handleUseSuggested}
+          isLoading={isLoading}
+        />
 
-      <Settings 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-      />
+        <Settings 
+          isOpen={isSettingsOpen} 
+          onClose={() => setIsSettingsOpen(false)} 
+        />
 
-      
-    </div>
+        
+      </div>
+    </Router>
   );
 }
 

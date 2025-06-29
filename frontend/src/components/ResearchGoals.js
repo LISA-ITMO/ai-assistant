@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/research-goals.css';
 
 const ResearchGoals = ({ topic, onSave, initialGoals = [], initialTasks = [] }) => {
@@ -8,10 +8,26 @@ const ResearchGoals = ({ topic, onSave, initialGoals = [], initialTasks = [] }) 
   const [dragItem, setDragItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
   const [dragType, setDragType] = useState(null);
+  const isInitialMount = useRef(true);
+
+  const adjustTextareaHeight = (element) => {
+    if (element) {
+      element.style.height = 'auto';
+      element.style.height = `${element.scrollHeight}px`;
+    }
+  };
 
   useEffect(() => {
-    setGoals(initialGoals);
-    setTasks(initialTasks);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    if (JSON.stringify(initialGoals) !== JSON.stringify(goals) || 
+        JSON.stringify(initialTasks) !== JSON.stringify(tasks)) {
+      setGoals(initialGoals);
+      setTasks(initialTasks);
+    }
   }, [initialGoals, initialTasks]);
 
   const handleGoalChange = (index, value) => {
@@ -145,12 +161,12 @@ const ResearchGoals = ({ topic, onSave, initialGoals = [], initialTasks = [] }) 
     <div className="research-goals-container">
       <div className="goals-header">
         <h2>Цели и задачи исследования</h2>
-        <p>Определите основные цели и задачи для вашего исследования по теме: <strong>{topic}</strong></p>
+        <p>Определите основные цели и задачи для вашего исследования по теме: <br></br><strong>{topic}</strong></p>
       </div>
       
       <div className="goals-section">
-        <h3 className="section-title">Цели исследования</h3>
-        <p>Цели определяют, чего вы хотите достичь в результате исследования.</p>
+        <h3 className="section-title">Цель исследования</h3>
+        <p>Цель определяет, чего вы хотите достичь в результате исследования.</p>
         
         <div className="items-list">
           {goals.map((goal, index) => (
@@ -168,7 +184,9 @@ const ResearchGoals = ({ topic, onSave, initialGoals = [], initialTasks = [] }) 
                 <textarea
                   value={goal}
                   onChange={(e) => handleGoalChange(index, e.target.value)}
+                  onInput={(e) => adjustTextareaHeight(e.target)}
                   placeholder={`Цель ${index + 1}`}
+                  ref={(el) => el && adjustTextareaHeight(el)}
                 />
               </div>
               <div className="item-actions">
@@ -226,7 +244,9 @@ const ResearchGoals = ({ topic, onSave, initialGoals = [], initialTasks = [] }) 
                 <textarea
                   value={task}
                   onChange={(e) => handleTaskChange(index, e.target.value)}
+                  onInput={(e) => adjustTextareaHeight(e.target)}
                   placeholder={`Задача ${index + 1}`}
+                  ref={(el) => el && adjustTextareaHeight(el)}
                 />
               </div>
               <div className="item-actions">

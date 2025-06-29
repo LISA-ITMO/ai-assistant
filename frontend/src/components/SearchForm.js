@@ -1,40 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/search-form.css';
+import { api } from '../services/api';
+import { toast } from 'react-hot-toast';
 
-/**
- * Компонент формы поиска для начала исследования
- */
-const SearchForm = ({ onSubmit, isLoading }) => {
-  const [query, setQuery] = useState('');
+const SearchForm = ({ onSubmit, isLoading, initialQuery, error, hasExistingResearch, existingTopic, onContinueResearch, onResetResearch }) => {
+  const [query, setQuery] = useState(initialQuery || '');
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [recentTopics, setRecentTopics] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recentTopics, setRecentTopics] = useState([]);
 
   useEffect(() => {
     const savedTopics = localStorage.getItem('recentTopics');
     if (savedTopics) {
-      setRecentTopics(JSON.parse(savedTopics).slice(0, 5));
+      setRecentTopics(JSON.parse(savedTopics));
     }
   }, []);
 
-  const saveToRecentTopics = (topic) => {
-    const updatedTopics = [topic, ...recentTopics.filter(t => t !== topic)].slice(0, 5);
-    setRecentTopics(updatedTopics);
-    localStorage.setItem('recentTopics', JSON.stringify(updatedTopics));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (query.trim()) {
-      saveToRecentTopics(query);
-      onSubmit(query);
+    if (!query.trim()) return;
+
+    try {
+      const response = await api.research.refineTopic(query, 'chatgpt');
+      
+      if (response && response.refined_topic) {
+        // Сохраняем тему в историю
+        const updatedTopics = [query, ...recentTopics.filter(t => t !== query)].slice(0, 5);
+        setRecentTopics(updatedTopics);
+        localStorage.setItem('recentTopics', JSON.stringify(updatedTopics));
+        
+        // Вызываем onSubmit с оригинальной и уточненной темой
+        onSubmit(query, response.refined_topic);
+      } else {
+        toast.error('Не удалось уточнить тему исследования');
+      }
+    } catch (error) {
+      console.error('Error refining topic:', error);
+      toast.error(`Ошибка при уточнении темы: ${error.message}`);
     }
   };
 
   const handleSuggestionClick = (topic) => {
     setQuery(topic);
-    saveToRecentTopics(topic);
-    onSubmit(topic);
+    setShowSuggestions(false);
   };
 
   return (
@@ -104,6 +112,18 @@ const SearchForm = ({ onSubmit, isLoading }) => {
           )}
         </button>
       </form>
+      
+      {hasExistingResearch && (
+        <div className="continue-research">
+          <p>У вас есть сохраненное исследование по теме: <strong>{existingTopic}</strong></p>
+          <button className="continue-button" onClick={onContinueResearch}>
+            Продолжить исследование
+          </button>
+          <button className="reset-button" onClick={onResetResearch}>
+            Начать новое
+          </button>
+        </div>
+      )}
       
       <div className="search-tips">
         <h4>Советы для лучших результатов:</h4>

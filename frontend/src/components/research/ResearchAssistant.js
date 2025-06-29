@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api';
+import { toast } from 'react-hot-toast';
 import '../../styles/research-assistant.css';
 
-const ResearchAssistant = ({ topic, researchId }) => {
+const ResearchAssistant = ({ researchId, analysisData, onAnalysisUpdate }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -17,11 +18,11 @@ const ResearchAssistant = ({ topic, researchId }) => {
       const welcomeMessage = {
         id: Date.now(),
         role: 'assistant',
-        content: `Здравствуйте! Я ваш исследовательский ассистент. Я помогу вам с исследованием на тему "${topic}". Что бы вы хотели узнать?`
+        content: 'Здравствуйте! Я ваш исследовательский ассистент. Чем могу помочь?'
       };
       setMessages([welcomeMessage]);
     }
-  }, [researchId, topic]);
+  }, [researchId]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -33,47 +34,41 @@ const ResearchAssistant = ({ topic, researchId }) => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = async (message) => {
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputMessage.trim() || isLoading) return;
+
     try {
-      const savedSettings = localStorage.getItem('llmSettings');
-      const apiKey = savedSettings ? JSON.parse(savedSettings).apiKey : null;
-      
-      if (!apiKey) {
-        throw new Error('API ключ не найден. Пожалуйста, добавьте API ключ в настройках.');
-      }
-
-      if (!researchId) {
-        throw new Error('ID исследования не найден');
-      }
-
-      const newMessage = { role: 'user', content: message };
-      setMessages(prev => [...prev, newMessage]);
-      
       setIsLoading(true);
-
-      console.log('Отправляем запрос с данными:', {
-        message,
-        research_id: researchId,
-        research_topic: topic,
-        chat_history: messages
-      });
-
+      const newMessage = { 
+        id: Date.now(),
+        role: 'user', 
+        content: inputMessage 
+      };
+      setMessages(prev => [...prev, newMessage]);
+      setInputMessage('');
+      setError('');
+      
       const response = await api.research.chat({
-        message,
-        research_id: researchId,
-        research_topic: topic,
-        chat_history: messages.map(({ role, content }) => ({ role, content }))
-      }, apiKey);
-
-      if (response && response.message) {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.message }]);
+        prompt: inputMessage,
+        provider: 'chatgpt',
+        use_rag: true,
+        top_k: 5
+      });
+      
+      if (response && response.response) {
+        setMessages(prev => [...prev, { 
+          id: Date.now(),
+          role: 'assistant', 
+          content: response.response 
+        }]);
       } else {
         throw new Error('Получен некорректный ответ от сервера');
       }
     } catch (error) {
       console.error('Ошибка при отправке сообщения:', error);
       setError(`Произошла ошибка: ${error.message}`);
-      setMessages(prev => prev.slice(0, -1));
+      toast.error(`Ошибка при отправке сообщения: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -100,9 +95,14 @@ const ResearchAssistant = ({ topic, researchId }) => {
               </div>
             </div>
           )}
+          {error && (
+            <div className="message error">
+              <div className="message-content">{error}</div>
+            </div>
+          )}
           <div ref={chatEndRef} />
         </div>
-        <form className="message-input-form" onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputMessage); }}>
+        <form className="message-input-form" onSubmit={handleSendMessage}>
           <input
             type="text"
             value={inputMessage}
